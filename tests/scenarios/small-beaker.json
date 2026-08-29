@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "120u бикаридина через мензурку 30u, сортировка по количеству",
+  "calibration": "../fixtures/chemmaster-input.test.json",
+  "beakerCapacity": 30,
+  "sorting": "quantity",
+  "buffer": [
+    { "prototype": "Inaprovaline", "amount": 80 },
+    { "prototype": "Carbon", "amount": 80 },
+    { "prototype": "Bicaridine", "amount": 10 }
+  ],
+  "jobs": [{ "request": "Bicaridine=120" }]
+}

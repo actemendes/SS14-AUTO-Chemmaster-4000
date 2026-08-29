@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "coordinateSpace": "ss14-client-physical-pixels",
+  "processExecutableName": "SS14.Loader.exe",
+  "clientWidth": 1601,
+  "clientHeight": 720,
+  "dpi": 96,
+  "uiScale": 0.7698113322257996,
+  "panelBounds": {
+    "x": 461,
+    "y": 89,
+    "width": 515,
+    "height": 515,
+    "right": 976,
+    "bottom": 604,
+    "isValid": true
+  },
+  "referenceWindowLeft": -5,
+  "referenceWindowTop": 29,
+  "createdAt": "2026-08-29T16:40:11.8003936+03:00",
+  "explicitlyConfirmed": true
+}

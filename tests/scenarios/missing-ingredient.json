@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "name": "Нет углерода — безопасный отказ до первого действия",
+  "calibration": "../fixtures/chemmaster-input.test.json",
+  "sorting": "quantity",
+  "buffer": [
+    { "prototype": "Inaprovaline", "amount": 20 },
+    { "prototype": "Dylovene", "amount": 30 }
+  ],
+  "jobs": [{ "request": "Bicaridine=20" }]
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "Диловен → трикордразин → пополнение и повторный заказ",
+  "calibration": "../fixtures/chemmaster-input.test.json",
+  "beakerCapacity": 100,
+  "sorting": "none",
+  "buffer": [
+    { "prototype": "Silicon", "amount": 100 },
+    { "prototype": "Nitrogen", "amount": 100 },
+    { "prototype": "Potassium", "amount": 100 },
+    { "prototype": "Oxygen", "amount": 100 },
+    { "prototype": "Carbon", "amount": 100 },
+    { "prototype": "Sugar", "amount": 100 }
+  ],
+  "jobs": [
+    { "request": "Dylovene=30" },
+    { "request": "Tricordrazine=20" },
+    { "request": "Dylovene=30;Tricordrazine=20" },
+    { "request": "Dylovene=30;Tricordrazine=20" },
+    { "request": "Tricordrazine=10", "mode": "make" }
+  ]
+}

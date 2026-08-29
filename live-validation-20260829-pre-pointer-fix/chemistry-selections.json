@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "categories": [
+    {
+      "id": "brute",
+      "name": "Механический (Brute)",
+      "medicines": ["Epinephrine", "Tricordrazine", "Bicaridine", "Omnizine"]
+    },
+    {
+      "id": "blunt",
+      "name": "Ушибы (Blunt)",
+      "medicines": ["Bruizine"]
+    },
+    {
+      "id": "slash",
+      "name": "Порезы (Slash)",
+      "medicines": ["Lacerinol"]
+    },
+    {
+      "id": "piercing",
+      "name": "Уколы (Piercing)",
+      "medicines": ["Puncturase"]
+    },
+    {
+      "id": "burn",
+      "name": "Физический (Burn)",
+      "medicines": ["Epinephrine", "Omnizine"]
+    },
+    {
+      "id": "heat",
+      "name": "Термические (Heat)",
+      "medicines": ["Tricordrazine", "Kelotane", "Dermaline", "Pyrazine"]
+    },
+    {
+      "id": "shock",
+      "name": "Электрический (Shock)",
+      "medicines": ["Tricordrazine", "Kelotane", "Dermaline", "Insuzine"]
+    },
+    {
+      "id": "cold",
+      "name": "Обморожение (Cold)",
+      "medicines": ["Tricordrazine", "Kelotane", "Dermaline", "Leporazine"]
+    },
+    {
+      "id": "caustic",
+      "name": "Кислотные (Caustic)",
+      "medicines": ["Sigynate", "Siderlac"]
+    },
+    {
+      "id": "cellular",
+      "name": "Генетические — Клеточные (Cellular)",
+      "medicines": ["Phalanximine", "Ambuzol", "AmbuzolPlus"]
+    },
+    {
+      "id": "airloss",
+      "name": "Нехватка воздуха (Airloss)",
+      "medicines": ["Omnizine"]
+    },
+    {
+      "id": "asphyxiation",
+      "name": "Удушение (Asphyxiation)",
+      "medicines": ["Dexalin", "DexalinPlus", "Epinephrine", "Inaprovaline"]
+    },
+    {
+      "id": "bloodloss",
+      "name": "Кровопотеря (Bloodloss)",
+      "medicines": ["Dexalin", "DexalinPlus"]
+    },
+    {
+      "id": "toxin",
+      "name": "Токсины (Toxin)",
+      "medicines": ["Omnizine"]
+    },
+    {
+      "id": "poison",
+      "name": "Яд (Poison)",
+      "medicines": ["Epinephrine", "Tricordrazine", "Dylovene", "Diphenhydramine", "Stellibinin", "Ethylredoxrazine"]
+    },
+    {
+      "id": "radiation",
+      "name": "Радиация (Radiation)",
+      "medicines": ["Arithrazine", "Hyronalin"]
+    },
+    {
+      "id": "cryogenics",
+      "name": "Криогенка",
+      "medicines": ["Cryoxadone", "Doxarubixadone", "Opporozidone", "Aloxadone", "Necrosol", "Cerebrin"]
+    },
+    {
+      "id": "psychotropic",
+      "name": "Психотропное",
+      "medicines": ["Haloperidol", "Mannitol", "Psicodine"]
+    },
+    {
+      "id": "misc",
+      "name": "Разное",
+      "medicines": ["Ipecac", "Cognizine", "Oculine"]
+    }
+  ],
+  "aliases": [
+    {
+      "enteredName": "Сетеллибинин",
+      "prototype": "Stellibinin",
+      "wikiName": "стеллибинин"
+    }
+  ],
+  "unresolved": [
+    {
+      "enteredName": "Некрозол",
+      "prototype": "Necrosol",
+      "reason": "На странице «Химия» SS220 ревизии 11655 вещество и рецепт отсутствуют. Требуется сверка с текущим клиентом или другим источником SS220."
+    }
+  ]
+}

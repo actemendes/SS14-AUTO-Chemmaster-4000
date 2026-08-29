@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "offlineOnly": true,
+  "total": 61,
+  "failed": 0,
+  "fixtureSha256": "2DAF2583B203046B0CE0CF3F05813808A3E14824EE2524DA1F844A71DCF69F50",
+  "cases": [
+    {
+      "name": "Полный рецепт: один клик на одно подтверждение и возврат",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Задержанный State не повторяет клик",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Нет изменения State: timeout без повторного клика",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Внешнее изменение буфера ставит на паузу и допускает abort",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Частичный перенос ставит на паузу и не разрешает replan с грязной мензуркой",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Движение scroll подтверждается быстрыми reads и полным финальным snapshot",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Некорректный cached hint принудительно переключается на полный scan",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Fast fallback-full hint всё равно требует отдельный финальный full",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Неоднозначный полный snapshot после fast hint блокирует следующий ввод",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Регресс времени полного snapshot после fast hint блокирует следующий ввод",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Изменение ValueTarget после первого stable включает emergency",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Закрытие панели останавливает до клика",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Неактивное окно: пауза и явное продолжение",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка активации SS14 сохраняет паузу без ввода",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Потеря фокуса после успешной активации повторно ставит на паузу",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка журнала Resume сохраняет паузу без ввода",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Изменение размера окна требует новой калибровки",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Смещение окна допустимо для client-relative координат",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Неправильный DPI требует новой калибровки",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Непустая мензурка блокирует запуск",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Обычная пауза и продолжение не теряют шаг",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка durable Pause сохраняет паузу без ввода",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Отмена запрещает новые клики",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Аварийная остановка требует явного reset",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Безопасный replan после внешнего изменения только с пустой мензуркой",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "JSONL-журнал содержит обязательные поля и валидный JSON",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Каждая JSONL-запись видна до Dispose журнала",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Видимая движущаяся строка ждёт атомарно стабильный scroll",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Pause/Resume перечитывает внешний State до клика",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "External decision не теряется при синхронном ответе из callback",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Pause линеаризован с уже начатым commit",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Потеря фокуса после click proof блокируется preflight",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Сдвиг курсора после scroll proof блокируется preflight",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Cancel ждёт commit и не отменяет post-click reconcile",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка журнала после клика не отменяет reconcile",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка durable click-sent не допускает следующий ввод после reconcile",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка progress callback после клика не отменяет reconcile",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка telemetry и внешнее изменение после клика не допускают replan-ввод",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка журнала после wheel hint не отменяет полный reconcile",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка durable scroll-sent не допускает следующий ввод после reconcile",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка progress callback после wheel hint не отменяет полный reconcile",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Ошибка telemetry и внешнее изменение после wheel не допускают replan-ввод",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Неопределённый SendInput включает emergency и reconcile без retry",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Устаревший финальный snapshot блокирует commit",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Непричинный snapshot с повторным sequence блокирует commit",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Live-like snapshot 2300 мс укладывается в default freshness",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Freshness setting принимает только 2000..10000 мс",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Dispose откладывает source/journal до завершения run",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "PreparedScroll отклоняет быстрый Pause→Resume epoch без wheel",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "PreparedScroll отклоняет stale scroll snapshot и перечитывает",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "PreparedScroll не отправляет wheel при stale panel geometry",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Неопределённый wheel включает emergency, reconcile и не повторяется",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Wheel в другой список включает emergency без клика и retry",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Одновременный сдвиг целевого и чужого scroll также блокируется",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Клик запрещён без точного causal pointer/hover proof",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Невидимый scroll 0/50 не блокирует exact hovered input-кнопку",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Нормальный рецепт использует не более двух полных snapshot на клик",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "External decision отвергает stale epoch",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Abort текущего epoch отменяет двухснимочную external validation",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "External accept отвергает непричинный повторный snapshot",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "Фиксированная fixture-калибровка не изменена",
+      "passed": true,
+      "error": null
+    }
+  ]
+}

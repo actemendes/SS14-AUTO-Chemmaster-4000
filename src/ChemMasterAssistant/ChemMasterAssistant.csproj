@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>ChemMasterAssistant</AssemblyName>
+    <RootNamespace>Ss14.ChemMasterAssistant</RootNamespace>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <ClrMdPath>$(MSBuildThisFileDirectory)..\..\.tools\clrmd-4.0.732401\lib\net10.0\Microsoft.Diagnostics.Runtime.dll</ClrMdPath>
+  </PropertyGroup>
+
+  <!-- Local files in this directory are included by the SDK automatically. -->
+  <ItemGroup>
+    <Compile Include="..\Shared\ChemCalibration.cs" Link="Production\ChemCalibration.cs" />
+    <Compile Include="..\ChemMaster\ActionJournal.cs" Link="Production\ActionJournal.cs" />
+    <Compile Include="..\ChemMaster\AssistantModels.cs" Link="Production\AssistantModels.cs" />
+    <Compile Include="..\ChemMaster\AssistantSettings.cs" Link="Production\AssistantSettings.cs" />
+    <Compile Include="..\ChemMaster\ChemMasterBuiReader.cs" Link="Production\ChemMasterBuiReader.cs" />
+    <Compile Include="..\ChemMaster\ChemMasterExecutor.cs" Link="Production\ChemMasterExecutor.cs" />
+    <Compile Include="..\ChemMaster\ChemMasterModels.cs" Link="Production\ChemMasterModels.cs" />
+    <Compile Include="..\ChemMaster\ChemMasterSnapshotSource.cs" Link="Production\ChemMasterSnapshotSource.cs" />
+    <Compile Include="..\ChemMaster\ChemMasterUiReader.cs" Link="Production\ChemMasterUiReader.cs" />
+    <Compile Include="..\ChemMaster\ChemistryPlanning.cs" Link="Production\ChemistryPlanning.cs" />
+    <Compile Include="..\ChemMaster\ChemistryVirtual.cs" Link="Production\ChemistryVirtual.cs" />
+    <Compile Include="..\ChemMaster\ClientDiscovery.cs" Link="Production\ClientDiscovery.cs" />
+    <Compile Include="..\ChemMaster\ExecutionSequencePlanner.cs" Link="Production\ExecutionSequencePlanner.cs" />
+    <Compile Include="..\ChemMaster\LiveCalibrationManager.cs" Link="Production\LiveCalibrationManager.cs" />
+    <Compile Include="..\ChemMaster\RecipeCatalogService.cs" Link="Production\RecipeCatalogService.cs" />
+    <Compile Include="..\ChemMaster\Ss14ClientConnection.cs" Link="Production\Ss14ClientConnection.cs" />
+    <Compile Include="..\ChemMaster\WindowsGameInput.cs" Link="Production\WindowsGameInput.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.Diagnostics.Runtime">
+      <HintPath>$(ClrMdPath)</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="VerifyLocalClrMd" BeforeTargets="ResolveReferences" Condition="!Exists('$(ClrMdPath)')">
+    <Error Text="Local Microsoft.Diagnostics.Runtime.dll was not found at $(ClrMdPath). Restore the repository build tools before publishing." />
+  </Target>
+</Project>
