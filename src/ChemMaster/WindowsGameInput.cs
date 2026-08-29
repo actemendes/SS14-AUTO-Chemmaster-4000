@@ -95,8 +95,6 @@ internal static class WindowsGameWindow
         [DllImport("user32.dll")] internal static extern uint GetDpiForWindow(IntPtr handle);
         [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool SetForegroundWindow(IntPtr handle);
-        [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool ShowWindow(IntPtr handle, int command);
         [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool SetCursorPos(int x, int y);
         [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
@@ -123,7 +121,6 @@ internal sealed class WindowsGameInput : IGameInputDriver
     private const uint MouseWheel = 0x0800;
     private const uint MouseVirtualDesk = 0x4000;
     private const uint MouseAbsolute = 0x8000;
-    private const int Restore = 9;
     private const int SmXVirtualScreen = 76;
     private const int SmYVirtualScreen = 77;
     private const int SmCxVirtualScreen = 78;
@@ -162,7 +159,6 @@ internal sealed class WindowsGameInput : IGameInputDriver
             var window = WindowsGameWindow.Capture(_windowHandle, _processId);
             if (!window.Exists || window.ProcessId != _processId) return false;
             var handle = new IntPtr(_windowHandle);
-            WindowsGameWindow.Native.ShowWindow(handle, Restore);
             return WindowsGameWindow.Native.SetForegroundWindow(handle);
         }
     }

@@ -51,8 +51,10 @@ internal static class AssistantProgram
             var catalog = RecipeCatalogService.Load(directory);
             var uniqueMedicines = catalog.Medicines.Select(item => item.Prototype)
                 .Distinct(StringComparer.OrdinalIgnoreCase).Count();
-            if (uniqueMedicines != 38)
-                throw new InvalidDataException($"Ожидалось 38 уникальных лекарств, найдено {uniqueMedicines}.");
+            if (catalog.ChemMasterMixTargetCount <= 100 || uniqueMedicines < catalog.ChemMasterMixTargetCount)
+                throw new InvalidDataException(
+                    $"Неполный список Химмастера: целей смешивания {catalog.ChemMasterMixTargetCount}, " +
+                    $"уникальных выбираемых веществ {uniqueMedicines}.");
             ValidateUnboundCalibration(Path.Combine(directory, "chemmaster-calibration.json"));
             var hotkeyLifecycle = GlobalEmergencyHotkey.ValidateLifecycleForSmokeTest();
 
@@ -63,7 +65,8 @@ internal static class AssistantProgram
             Console.WriteLine(
                 $"SMOKE OK: schema={catalog.SchemaVersion}, revision={catalog.RevisionId}, " +
                 $"chemicals={catalog.ChemicalCount}, recipes={catalog.RecipeVariantCount}, " +
-                $"medicines={uniqueMedicines}, categoryRows={catalog.Medicines.Count}, " +
+                $"targets={uniqueMedicines}, mixTargets={catalog.ChemMasterMixTargetCount}, " +
+                $"categoryRows={catalog.Medicines.Count}, " +
                 $"hotkey={settings.EmergencyHotkey}, hotkeyLifecycle={hotkeyLifecycle}.");
             return 0;
         }

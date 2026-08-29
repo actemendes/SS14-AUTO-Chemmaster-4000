@@ -54,6 +54,39 @@ foreach ($category in $selections.categories) {
     }
 }
 
+$chemMasterCategory = @($selections.categories | Where-Object id -eq 'chemmaster-all')
+Assert-True ($chemMasterCategory.Count -eq 1) 'Expected exactly one chemmaster-all category.'
+$expectedChemMasterTargets = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+foreach ($chemical in $catalog.chemicals) {
+    foreach ($recipe in $chemical.recipes) {
+        if ($recipe.operation -ne 'mix') { continue }
+        $targetOutput = @($recipe.outputs | Where-Object prototype -eq $chemical.prototype |
+            Measure-Object -Property amount -Sum).Sum
+        $targetInput = @($recipe.inputs | Where-Object {
+            $_.prototype -eq $chemical.prototype -and -not $_.catalyst
+        } | Measure-Object -Property amount -Sum).Sum
+        if ([double] $targetOutput -gt [double] $targetInput) {
+            $expectedChemMasterTargets.Add([string] $chemical.prototype) | Out-Null
+        }
+    }
+}
+$listedChemMasterTargets = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+foreach ($prototype in $chemMasterCategory[0].medicines) {
+    $listedChemMasterTargets.Add([string] $prototype) | Out-Null
+}
+Assert-True ($expectedChemMasterTargets.Count -gt 100) 'ChemMaster mixing target set is unexpectedly small.'
+Assert-True ($listedChemMasterTargets.SetEquals($expectedChemMasterTargets)) 'chemmaster-all does not exactly cover the Wiki mixing recipes.'
+
+$wikiCategories = @($selections.categories | Where-Object id -like 'wiki-*')
+Assert-True ($wikiCategories.Count -eq 8) 'Expected the eight Wiki recipe categories.'
+$listedWikiTargets = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+foreach ($category in $wikiCategories) {
+    foreach ($prototype in $category.medicines) {
+        Assert-True ($listedWikiTargets.Add([string] $prototype)) "Wiki categories overlap at target: $prototype."
+    }
+}
+Assert-True ($listedWikiTargets.SetEquals($expectedChemMasterTargets)) 'Wiki categories do not exactly partition the ChemMaster mixing targets.'
+
 foreach ($alias in $selections.aliases) {
     Assert-True ($byPrototype.ContainsKey($alias.prototype)) "Alias points to an unknown prototype: $($alias.prototype)."
 }

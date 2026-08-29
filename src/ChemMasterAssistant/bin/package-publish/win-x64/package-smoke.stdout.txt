@@ -1,1 +1,1 @@
-SMOKE OK: schema=1, revision=11655, chemicals=237, recipes=215, medicines=38, categoryRows=54, hotkey=F12, hotkeyLifecycle=RegisterHotKey+WH_KEYBOARD_LL lifecycle OK.
+SMOKE OK: schema=1, revision=11655, chemicals=237, recipes=215, targets=129, mixTargets=126, categoryRows=306, hotkey=F12, hotkeyLifecycle=RegisterHotKey+WH_KEYBOARD_LL lifecycle OK.

@@ -95,6 +95,102 @@
       "id": "misc",
       "name": "Разное",
       "medicines": ["Ipecac", "Cognizine", "Oculine"]
+    },
+    {
+      "id": "chemmaster-all",
+      "name": "Все рецепты Химмастера (смешивание)",
+      "medicines": [
+        "PotassiumIodide", "Sigynate", "Siderlac", "Cognizine", "Ultravasculine", "Heparin",
+        "Arithrazine", "Ipecac", "Harai", "Insuzine", "Fomepizole", "Ambuzol", "Lipozine",
+        "Pyrazine", "Diphenylmethylamine", "Epinephrine", "Tricordrazine", "Haloperidol",
+        "Phalanximine", "Leporazine", "Cryoxadone", "Puncturase", "Ethyloxyephedrine",
+        "Synaptizine", "Doxarubixadone", "Oculine", "TranexamicAcid", "Mannitol", "Nicergoline",
+        "Inaprovaline", "Opporozidone", "Kelotane", "Aloxadone", "Bruizine", "Arcryox", "Cerebrin",
+        "Dermaline", "Lacerinol", "Dexalin", "AmbuzolPlus", "Ethylredoxrazine", "Saline",
+        "Psicodine", "Diphenhydramine", "Hyronalin", "Bicaridine", "Cryptobiolin", "Dylovene",
+        "DexalinPlus", "Impedrezene", "Ephedrine", "Opium", "Stimulants", "Nocturine", "Happiness",
+        "SpaceDrugs", "NorepinephricAcid", "MuteToxin", "Desoxyephedrine", "Aglomorphine", "Pax",
+        "Frontier", "Napalm", "ChlorineTrifluoride", "FoamingAgent", "Thermite", "Phlogiston",
+        "Fluorosurfactant", "Felinase", "ChloralHydrate", "CorgiJuice", "MindbreakerToxin",
+        "Caninase", "Razorium", "BuzzochloricBees", "Tazinide", "UnstableMutagen", "Hemorrhinol",
+        "Lipolicide", "Lexorin", "Licoxide", "SulfuricAcid", "HeartbreakerToxin", "PolytrinicAcid",
+        "Fresium", "FluorosulfuricAcid", "Ketchup", "Coldsauce", "TableSalt", "Ketchunaise",
+        "Mustard", "Protein", "Soysauce", "Vinaigrette", "BbqSauce", "EggCooked", "Vinegar",
+        "Hotsauce", "Mayo", "Oil", "Left4Zed", "Diethylamine", "RobustHarvest", "EZNutrient",
+        "Sedin", "Ammonia", "PlantBGone", "Blood", "SodiumHydroxide", "Laughter", "Benzene", "Bleach",
+        "Ash", "Fersilicite", "Lye", "Charcoal", "SpaceLube", "SodiumPolyacrylate",
+        "SodiumCarbonate", "ArtifactGlue", "Ice", "Hydroxide", "SpaceCleaner", "Carpetium",
+        "Phenol", "Acetone"
+      ]
+    },
+    {
+      "id": "wiki-medications",
+      "name": "Вики · Медикаменты",
+      "medicines": [
+        "PotassiumIodide", "Sigynate", "Siderlac", "Cognizine", "Ultravasculine", "Heparin",
+        "Arithrazine", "Ipecac", "Harai", "Insuzine", "Fomepizole", "Ambuzol", "Lipozine",
+        "Pyrazine", "Diphenylmethylamine", "Epinephrine", "Tricordrazine", "Haloperidol",
+        "Phalanximine", "Leporazine", "Cryoxadone", "Puncturase", "Ethyloxyephedrine",
+        "Synaptizine", "Doxarubixadone", "Oculine", "TranexamicAcid", "Mannitol", "Nicergoline",
+        "Inaprovaline", "Opporozidone", "Kelotane", "Aloxadone", "Bruizine", "Arcryox", "Cerebrin",
+        "Dermaline", "Lacerinol", "Dexalin", "AmbuzolPlus", "Ethylredoxrazine", "Saline",
+        "Psicodine", "Diphenhydramine", "Hyronalin", "Bicaridine", "Cryptobiolin", "Dylovene",
+        "DexalinPlus"
+      ]
+    },
+    {
+      "id": "wiki-narcotics",
+      "name": "Вики · Наркотики",
+      "medicines": [
+        "Impedrezene", "Ephedrine", "Opium", "Stimulants", "Nocturine", "Happiness", "SpaceDrugs",
+        "NorepinephricAcid", "MuteToxin", "Desoxyephedrine", "Aglomorphine", "Pax", "Frontier"
+      ]
+    },
+    {
+      "id": "wiki-pyrotechnics",
+      "name": "Вики · Пиротехника",
+      "medicines": [
+        "Napalm", "ChlorineTrifluoride", "FoamingAgent", "Thermite", "Phlogiston", "Fluorosurfactant"
+      ]
+    },
+    {
+      "id": "wiki-toxins",
+      "name": "Вики · Токсины",
+      "medicines": [
+        "Felinase", "ChloralHydrate", "CorgiJuice", "MindbreakerToxin", "Caninase", "Razorium",
+        "BuzzochloricBees", "Tazinide", "UnstableMutagen", "Hemorrhinol", "Lipolicide", "Lexorin",
+        "Licoxide", "SulfuricAcid", "HeartbreakerToxin", "PolytrinicAcid", "Fresium",
+        "FluorosulfuricAcid"
+      ]
+    },
+    {
+      "id": "wiki-edible",
+      "name": "Вики · Съедобное",
+      "medicines": [
+        "Ketchup", "Coldsauce", "TableSalt", "Ketchunaise", "Mustard", "Protein", "Soysauce",
+        "Vinaigrette", "BbqSauce", "EggCooked", "Vinegar", "Hotsauce", "Mayo", "Oil"
+      ]
+    },
+    {
+      "id": "wiki-botany",
+      "name": "Вики · Ботаника",
+      "medicines": [
+        "Left4Zed", "Diethylamine", "RobustHarvest", "EZNutrient", "Sedin", "Ammonia", "PlantBGone"
+      ]
+    },
+    {
+      "id": "wiki-biological",
+      "name": "Вики · Биологические субстанции",
+      "medicines": ["Blood"]
+    },
+    {
+      "id": "wiki-other",
+      "name": "Вики · Прочее",
+      "medicines": [
+        "SodiumHydroxide", "Laughter", "Benzene", "Bleach", "Ash", "Fersilicite", "Lye",
+        "Charcoal", "SpaceLube", "SodiumPolyacrylate", "SodiumCarbonate", "ArtifactGlue", "Ice",
+        "Hydroxide", "SpaceCleaner", "Carpetium", "Phenol", "Acetone"
+      ]
     }
   ],
   "aliases": [

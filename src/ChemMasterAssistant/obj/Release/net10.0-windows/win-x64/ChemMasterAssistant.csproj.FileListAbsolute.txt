@@ -281,3 +281,7 @@ E:\YandexDisk\1CODING\ss14-chemmaster\src\ChemMasterAssistant\bin\Release\net10.
 E:\YandexDisk\1CODING\ss14-chemmaster\src\ChemMasterAssistant\bin\Release\net10.0-windows\win-x64\zh-Hant\System.Windows.Forms.Design.resources.dll
 E:\YandexDisk\1CODING\ss14-chemmaster\src\ChemMasterAssistant\bin\Release\net10.0-windows\win-x64\zh-Hant\System.Windows.Forms.Primitives.resources.dll
 E:\YandexDisk\1CODING\ss14-chemmaster\src\ChemMasterAssistant\bin\Release\net10.0-windows\win-x64\zh-Hant\System.Windows.Forms.resources.dll
+E:\YandexDisk\1CODING\ss14-chemmaster\.test-results\window-switch-build\ChemMasterAssistant.exe
+E:\YandexDisk\1CODING\ss14-chemmaster\.test-results\window-switch-build\ChemMasterAssistant.deps.json
+E:\YandexDisk\1CODING\ss14-chemmaster\.test-results\window-switch-build\ChemMasterAssistant.runtimeconfig.json
+E:\YandexDisk\1CODING\ss14-chemmaster\.test-results\window-switch-build\ChemMasterAssistant.dll

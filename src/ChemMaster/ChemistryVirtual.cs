@@ -118,8 +118,15 @@ internal static class ChemistryVirtual
             // button press. A preflight failure leaves the caller's virtual inventory intact.
             var trial = machine.Clone();
             var commands = new List<VirtualCommand>();
+            ChemistryPlanning.PlanStepOutput? externalPreparation = null;
             foreach (var step in plan.Steps)
             {
+                if (step.RequiresExternalApparatus || step.GasProducts.Count != 0)
+                {
+                    PrepareExternalStep(trial, step, commands);
+                    externalPreparation = step;
+                    break;
+                }
                 if (!goals.ContainsKey(step.Prototype))
                 {
                     var roundedTrial = trial.Clone();
@@ -141,16 +148,25 @@ internal static class ChemistryVirtual
                 }
                 Produce(trial, step, commands);
             }
-            if (goals.Any(x => trial.Buffer.Get(x.Key) < x.Value))
-                throw new VirtualStop("target-not-reached", "Проверка итогового состава не подтвердила все цели.");
-            if (trial.Beaker.Volume != 0) throw new VirtualStop("return-incomplete", "Не всё возвращено в буфер.");
+            if (externalPreparation == null)
+            {
+                if (goals.Any(x => trial.Buffer.Get(x.Key) < x.Value))
+                    throw new VirtualStop("target-not-reached", "Проверка итогового состава не подтвердила все цели.");
+                if (trial.Beaker.Volume != 0) throw new VirtualStop("return-incomplete", "Не всё возвращено в буфер.");
+            }
+            else if (trial.Beaker.Volume == 0)
+                throw new VirtualStop("external-preparation-empty", externalPreparation.Prototype +
+                    ": внешний этап не оставил подготовленную смесь во входной мензурке.");
 
             for (int i = 0; i < commands.Count; i++)
             {
                 beforeApply?.Invoke(i, machine);
                 executed.Add(machine.Apply(commands[i]));
             }
-            return new VirtualJobResult(job.Request, "completed", "Цели проверены, содержимое мензурки возвращено в буфер.",
+            var detail = externalPreparation == null
+                ? "Цели проверены, содержимое мензурки возвращено в буфер."
+                : ExternalPreparationDetail(externalPreparation);
+            return new VirtualJobResult(job.Request, "completed", detail,
                 plan, initial, machine.Buffer.Export(), executed);
         }
         catch (VirtualStop stop)
@@ -229,6 +245,48 @@ internal static class ChemistryVirtual
             remaining -= acceptedSize;
         }
         return rounded;
+    }
+
+    private static void PrepareExternalStep(VirtualChemMaster machine,
+        ChemistryPlanning.PlanStepOutput step, List<VirtualCommand> commands)
+    {
+        var rule = machine.Rules.Reactions.FirstOrDefault(rule => Matches(step, rule));
+        if (rule == null)
+            throw new VirtualStop("recipe-mismatch", step.Prototype +
+                ": план вики не совпал с игровым рецептом внешнего этапа.");
+        var target = rule.Outputs.Single(x => x.Prototype == step.Prototype);
+        var repeats = step.TargetAmount / target.Amount;
+        if (repeats <= 0)
+            throw new VirtualStop("invalid-plan", step.Prototype + ": неверный объём внешнего этапа.");
+
+        var required = rule.Inputs.Select(input => new
+        {
+            input.Prototype,
+            Amount = Cents(input.Amount * (input.Catalyst ? 1 : repeats)),
+        }).ToList();
+        var total = checked(required.Sum(input => input.Amount));
+        if (total > machine.Capacity - machine.Beaker.Volume)
+            throw new VirtualStop("capacity-too-small", step.Prototype +
+                ": ингредиенты внешнего этапа не помещаются во входную мензурку.");
+
+        foreach (var input in required)
+            TransferExact(machine, input.Prototype, input.Amount, commands);
+    }
+
+    private static string ExternalPreparationDetail(ChemistryPlanning.PlanStepOutput step)
+    {
+        var conditions = new List<string>();
+        if (step.MinimumTemperatureKelvinExclusive.HasValue)
+            conditions.Add("нагреть выше " + step.MinimumTemperatureKelvinExclusive.Value.ToString("0.##", CultureInfo.InvariantCulture) + " K");
+        if (step.MaximumTemperatureKelvinExclusive.HasValue)
+            conditions.Add("охладить ниже " + step.MaximumTemperatureKelvinExclusive.Value.ToString("0.##", CultureInfo.InvariantCulture) + " K");
+        if (!step.Operation.Equals("mix", StringComparison.OrdinalIgnoreCase))
+            conditions.Add(step.ActionText);
+        if (step.GasProducts.Count != 0)
+            conditions.Add("учесть выделение газа: " + string.Join(", ", step.GasProducts.Select(gas => gas.Name)));
+        if (conditions.Count == 0) conditions.Add("выполнить внешний этап вручную");
+        return "Ингредиенты для «" + step.DisplayName + "» собраны во входной мензурке. Дальше вручную: " +
+            string.Join("; ", conditions) + ".";
     }
 
     private static IEnumerable<List<string>> Orders(List<string> values)

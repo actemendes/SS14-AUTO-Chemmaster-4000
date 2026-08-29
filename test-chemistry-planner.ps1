@@ -30,7 +30,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 $list = $listJson | ConvertFrom-Json
 Assert-True ($list.catalogRevision -eq 11655) 'Unexpected catalog revision.'
-Assert-True ($list.categories.Count -eq 19) 'Expected 19 medicine categories.'
+Assert-True ($list.categories.Count -eq 28) 'Expected 19 medical categories, chemmaster-all, and eight Wiki categories.'
+$allChemMaster = @($list.categories | Where-Object id -eq 'chemmaster-all')
+Assert-True ($allChemMaster.Count -eq 1) 'The chemmaster-all category is missing.'
+Assert-True ($allChemMaster[0].medicines.Count -eq 126) 'Expected all 126 ChemMaster mixing targets.'
+$wikiCategories = @($list.categories | Where-Object id -like 'wiki-*')
+Assert-True ($wikiCategories.Count -eq 8) 'Expected the eight Wiki categories in planner output.'
+Assert-True (($wikiCategories | Where-Object id -eq 'wiki-narcotics').medicines.Count -eq 13) 'Expected 13 narcotics recipes.'
 
 $plan = Get-Plan 'Epinephrine=20;Tricordrazine=10'
 Assert-True ($plan.requested.Count -eq 2) 'Expected two requested medicines.'

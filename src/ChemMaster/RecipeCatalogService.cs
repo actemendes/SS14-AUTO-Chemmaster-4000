@@ -13,15 +13,17 @@ internal sealed class RecipeCatalogService
     public int RevisionId { get; }
     public int ChemicalCount { get; }
     public int RecipeVariantCount { get; }
+    public int ChemMasterMixTargetCount { get; }
     public IReadOnlyList<MedicineChoice> Medicines { get; }
 
     private RecipeCatalogService(int schemaVersion, int revisionId, int chemicalCount,
-        int recipeVariantCount, IReadOnlyList<MedicineChoice> medicines)
+        int recipeVariantCount, int chemMasterMixTargetCount, IReadOnlyList<MedicineChoice> medicines)
     {
         SchemaVersion = schemaVersion;
         RevisionId = revisionId;
         ChemicalCount = chemicalCount;
         RecipeVariantCount = recipeVariantCount;
+        ChemMasterMixTargetCount = chemMasterMixTargetCount;
         Medicines = medicines;
     }
 
@@ -54,13 +56,29 @@ internal sealed class RecipeCatalogService
             throw new InvalidDataException("Локальный снимок игровых правил пуст.");
 
         var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var chemMasterMixTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var recipeCount = 0;
         foreach (var chemical in recipeRoot.GetProperty("chemicals").EnumerateArray())
         {
             var prototype = RequiredString(chemical, "prototype");
             var display = RequiredString(chemical, "displayName");
             if (!names.TryAdd(prototype, display)) throw new InvalidDataException("Повторный prototype в каталоге: " + prototype);
-            recipeCount = checked(recipeCount + chemical.GetProperty("recipes").GetArrayLength());
+            var chemicalRecipes = chemical.GetProperty("recipes");
+            recipeCount = checked(recipeCount + chemicalRecipes.GetArrayLength());
+            foreach (var recipe in chemicalRecipes.EnumerateArray())
+            {
+                if (!RequiredString(recipe, "operation").Equals("mix", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var targetOutput = recipe.GetProperty("outputs").EnumerateArray()
+                    .Where(row => RequiredString(row, "prototype").Equals(prototype, StringComparison.OrdinalIgnoreCase))
+                    .Sum(row => row.GetProperty("amount").GetDecimal());
+                var targetInput = recipe.GetProperty("inputs").EnumerateArray()
+                    .Where(row => RequiredString(row, "prototype").Equals(prototype, StringComparison.OrdinalIgnoreCase) &&
+                                  !row.GetProperty("catalyst").GetBoolean())
+                    .Sum(row => row.GetProperty("amount").GetDecimal());
+                if (targetOutput > targetInput)
+                    chemMasterMixTargets.Add(prototype);
+            }
         }
 
         var unresolved = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -71,6 +89,9 @@ internal sealed class RecipeCatalogService
 
         var choices = new List<MedicineChoice>();
         var categoryIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        HashSet<string>? listedChemMasterMixTargets = null;
+        var wikiMixTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var wikiCategoryCount = 0;
         foreach (var category in selectionRoot.GetProperty("categories").EnumerateArray())
         {
             var categoryId = RequiredString(category, "id");
@@ -78,12 +99,19 @@ internal sealed class RecipeCatalogService
             if (!categoryIds.Add(categoryId))
                 throw new InvalidDataException("Повторная категория лекарств: " + categoryId);
             var categoryMedicines = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (categoryId.Equals("chemmaster-all", StringComparison.OrdinalIgnoreCase))
+                listedChemMasterMixTargets = categoryMedicines;
+            var isWikiCategory = categoryId.StartsWith("wiki-", StringComparison.OrdinalIgnoreCase);
+            if (isWikiCategory)
+                wikiCategoryCount++;
             foreach (var value in category.GetProperty("medicines").EnumerateArray())
             {
                 var prototype = value.GetString();
                 if (string.IsNullOrWhiteSpace(prototype)) throw new InvalidDataException("Пустой medicine prototype.");
                 if (!categoryMedicines.Add(prototype))
                     throw new InvalidDataException("Повторное лекарство внутри категории: " + categoryId + "/" + prototype);
+                if (isWikiCategory && !wikiMixTargets.Add(prototype))
+                    throw new InvalidDataException("Рецепт повторён в разделах вики: " + prototype);
                 string display;
                 var resolved = names.TryGetValue(prototype, out var catalogDisplay);
                 if (resolved)
@@ -94,9 +122,17 @@ internal sealed class RecipeCatalogService
                     (prototype + " " + display + " " + categoryName).ToLowerInvariant().Replace('ё', 'е')));
             }
         }
-        if (choices.Select(item => item.Prototype).Distinct(StringComparer.OrdinalIgnoreCase).Count() != 38 ||
-            categoryIds.Count != 19)
-            throw new InvalidDataException("Выбор лекарств не совпадает с версионированным набором 38/19.");
+        if (listedChemMasterMixTargets == null)
+            throw new InvalidDataException("Отсутствует обязательная категория chemmaster-all.");
+        if (!listedChemMasterMixTargets.SetEquals(chemMasterMixTargets))
+        {
+            var missing = chemMasterMixTargets.Except(listedChemMasterMixTargets, StringComparer.OrdinalIgnoreCase);
+            var extra = listedChemMasterMixTargets.Except(chemMasterMixTargets, StringComparer.OrdinalIgnoreCase);
+            throw new InvalidDataException("Категория chemmaster-all не совпадает с рецептами смешивания. " +
+                "Не хватает: " + string.Join(", ", missing) + "; лишние: " + string.Join(", ", extra) + ".");
+        }
+        if (wikiCategoryCount != 8 || !wikiMixTargets.SetEquals(chemMasterMixTargets))
+            throw new InvalidDataException("Восемь разделов вики должны без повторов покрывать все рецепты Химмастера.");
 
         // Pin the independently deserialized planning/rules objects now, while the
         // validated files are known-good. Later file replacement cannot affect a
@@ -107,7 +143,7 @@ internal sealed class RecipeCatalogService
             !StringComparer.Ordinal.Equals(pinnedRules.Revision, rulesRevision) ||
             pinnedRules.Reactions.Count != ruleReactionCount || pinnedRules.Reagents.Count != ruleReagentCount)
             throw new InvalidDataException("Проверенный каталог и закреплённые runtime-правила не совпали.");
-        return new RecipeCatalogService(1, revision, names.Count, recipeCount, choices);
+        return new RecipeCatalogService(1, revision, names.Count, recipeCount, chemMasterMixTargets.Count, choices);
     }
 
     public IReadOnlyList<MedicineChoice> Search(string? text)

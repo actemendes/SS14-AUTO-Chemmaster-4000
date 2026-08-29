@@ -477,7 +477,15 @@ internal static class ChemistryVirtualTests
         Case("guards", "Активен режим уничтожения", () => { var m = Elements(); m.Mode = "discard"; Blocked(m, "Dylovene=10", "wrong-mode"); });
         Case("guards", "Грязная входная ёмкость", () => { var m = Elements(); m.Beaker.Add("Water", 1); Blocked(m, "Dylovene=10", "beaker-not-empty"); });
         Case("guards", "Не помещается минимальная партия", () => Blocked(Machine(Stock(("Inaprovaline", 10), ("Carbon", 10)), 1), "Bicaridine=10", "capacity-too-small"));
-        Case("guards", "Требуется нагрев и газовый эффект", () => Blocked(Raw(("Hyronalin", 5), ("Hydrogen", 5)), "Arithrazine=10", "external-condition"));
+        Case("manual", "Ингредиенты внешнего этапа остаются в мензурке", () =>
+        {
+            var machine = Raw(("Hyronalin", 5), ("Hydrogen", 5));
+            var result = Run(machine, "Arithrazine=10");
+            Equal(result.Status, "completed", result.Detail);
+            Assert(result.Detail.Contains("Дальше вручную", StringComparison.Ordinal), "Нет инструкции человеку");
+            Equal(machine.Beaker.Get("Hyronalin"), 500, "Гироналин не собран");
+            Equal(machine.Beaker.Get("Hydrogen"), 500, "Водород не собран");
+        });
         Case("guards", "Неизвестная цель среди известных запрещает частичное выполнение", () => Blocked(Elements(), "Dylovene=10;TypoMedicine=10", "invalid-request"));
         Case("guards", "Отрицательная цель", () => Blocked(Elements(), "Dylovene=-1", "invalid-request"));
         Case("guards", "Нулевая цель", () => Blocked(Elements(), "Dylovene=0", "invalid-request"));

@@ -5,9 +5,9 @@
   "reactionCount": 345,
   "reagentCount": 453,
   "calibrationSha256": "2DAF2583B203046B0CE0CF3F05813808A3E14824EE2524DA1F844A71DCF69F50",
-  "total": 519,
-  "failed": 0,
-  "elapsedSeconds": 1.598249,
+  "total": 701,
+  "failed": 1,
+  "elapsedSeconds": 1.688342,
   "cases": [
     {
       "group": "calibration",
@@ -246,8 +246,8 @@
     {
       "group": "production",
       "name": "Округление промежуточных партий 5u → 6u и возврат остатков",
-      "passed": true,
-      "error": null
+      "passed": false,
+      "error": "Остаток диловена: expected 100, got 1000"
     },
     {
       "group": "production",
@@ -828,6 +828,1098 @@
     {
       "group": "selected-medicines",
       "name": "Oculine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "PotassiumIodide: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "PotassiumIodide: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ultravasculine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ultravasculine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Heparin: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Heparin: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Harai: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Harai: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Fomepizole: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Fomepizole: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Lipozine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Lipozine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Diphenylmethylamine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Diphenylmethylamine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ethyloxyephedrine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ethyloxyephedrine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Synaptizine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Synaptizine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "TranexamicAcid: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "TranexamicAcid: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Nicergoline: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Nicergoline: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Arcryox: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Arcryox: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Saline: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Saline: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Cryptobiolin: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Cryptobiolin: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Impedrezene: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Impedrezene: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ephedrine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ephedrine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Opium: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Opium: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Stimulants: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Stimulants: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Nocturine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Nocturine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Happiness: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Happiness: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SpaceDrugs: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SpaceDrugs: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "NorepinephricAcid: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "NorepinephricAcid: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "MuteToxin: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "MuteToxin: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Desoxyephedrine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Desoxyephedrine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Aglomorphine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Aglomorphine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Pax: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Pax: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Frontier: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Frontier: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Napalm: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Napalm: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "ChlorineTrifluoride: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "ChlorineTrifluoride: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "FoamingAgent: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "FoamingAgent: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Thermite: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Thermite: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Phlogiston: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Phlogiston: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Fluorosurfactant: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Fluorosurfactant: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Felinase: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Felinase: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "ChloralHydrate: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "ChloralHydrate: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "CorgiJuice: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "CorgiJuice: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "MindbreakerToxin: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "MindbreakerToxin: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Caninase: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Caninase: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Razorium: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Razorium: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "BuzzochloricBees: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "BuzzochloricBees: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Tazinide: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Tazinide: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "UnstableMutagen: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "UnstableMutagen: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Hemorrhinol: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Hemorrhinol: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Lipolicide: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Lipolicide: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Lexorin: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Lexorin: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Licoxide: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Licoxide: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SulfuricAcid: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SulfuricAcid: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "HeartbreakerToxin: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "HeartbreakerToxin: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "PolytrinicAcid: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "PolytrinicAcid: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Fresium: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Fresium: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "FluorosulfuricAcid: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "FluorosulfuricAcid: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ketchup: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ketchup: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Coldsauce: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Coldsauce: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "TableSalt: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "TableSalt: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ketchunaise: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ketchunaise: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Mustard: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Mustard: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Protein: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Protein: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Soysauce: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Soysauce: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Vinaigrette: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Vinaigrette: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "BbqSauce: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "BbqSauce: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "EggCooked: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "EggCooked: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Vinegar: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Vinegar: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Hotsauce: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Hotsauce: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Mayo: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Mayo: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Oil: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Oil: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Left4Zed: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Left4Zed: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Diethylamine: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Diethylamine: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "RobustHarvest: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "RobustHarvest: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "EZNutrient: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "EZNutrient: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Sedin: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Sedin: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ammonia: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ammonia: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "PlantBGone: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "PlantBGone: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Blood: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Blood: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SodiumHydroxide: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SodiumHydroxide: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Laughter: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Laughter: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Benzene: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Benzene: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Bleach: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Bleach: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ash: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ash: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Fersilicite: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Fersilicite: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Lye: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Lye: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Charcoal: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Charcoal: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SpaceLube: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SpaceLube: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SodiumPolyacrylate: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SodiumPolyacrylate: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SodiumCarbonate: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SodiumCarbonate: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "ArtifactGlue: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "ArtifactGlue: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ice: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Ice: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Hydroxide: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Hydroxide: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SpaceCleaner: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "SpaceCleaner: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Carpetium: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Carpetium: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Phenol: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Phenol: уже есть ровно 10u",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Acetone: отсутствует и нет исходников",
+      "passed": true,
+      "error": null
+    },
+    {
+      "group": "selected-medicines",
+      "name": "Acetone: уже есть ровно 10u",
       "passed": true,
       "error": null
     },
@@ -3010,8 +4102,8 @@
       "error": null
     },
     {
-      "group": "guards",
-      "name": "Требуется нагрев и газовый эффект",
+      "group": "manual",
+      "name": "Ингредиенты внешнего этапа остаются в мензурке",
       "passed": true,
       "error": null
     },
@@ -4338,15 +5430,15 @@
             },
             {
               "prototype": "Oxygen",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Carbon",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Sugar",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Dylovene",
@@ -4354,7 +5446,7 @@
             },
             {
               "prototype": "Inaprovaline",
-              "amount": 2
+              "amount": 5
             },
             {
               "prototype": "Tricordrazine",
@@ -4364,16 +5456,16 @@
           "actions": [
             {
               "prototype": "Oxygen",
-              "dose": "1",
+              "dose": "5",
               "fromBuffer": true,
               "rowIndex": 3,
               "firstVisibleRow": 0,
               "scrollRequired": false,
               "point": {
-                "x": 200.47087378640776,
-                "y": 433.6856796116504
+                "x": 224.01941747572818,
+                "y": 434.9939320388348
               },
-              "amountHundredths": 100,
+              "amountHundredths": 500,
               "bufferAfter": [
                 {
                   "prototype": "Silicon",
@@ -4389,7 +5481,7 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
@@ -4407,7 +5499,7 @@
               "beakerAfter": [
                 {
                   "prototype": "Oxygen",
-                  "amount": 1
+                  "amount": 5
                 }
               ],
               "temperature": 293.15,
@@ -4415,16 +5507,16 @@
             },
             {
               "prototype": "Sugar",
-              "dose": "1",
+              "dose": "5",
               "fromBuffer": true,
               "rowIndex": 5,
               "firstVisibleRow": 0,
               "scrollRequired": false,
               "point": {
-                "x": 200.47087378640776,
-                "y": 482.0910194174756
+                "x": 224.01941747572818,
+                "y": 483.39927184466
               },
-              "amountHundredths": 100,
+              "amountHundredths": 500,
               "bufferAfter": [
                 {
                   "prototype": "Silicon",
@@ -4440,7 +5532,7 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
@@ -4448,7 +5540,7 @@
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -4458,11 +5550,11 @@
               "beakerAfter": [
                 {
                   "prototype": "Oxygen",
-                  "amount": 1
+                  "amount": 5
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 1
+                  "amount": 5
                 }
               ],
               "temperature": 293.15,
@@ -4470,16 +5562,16 @@
             },
             {
               "prototype": "Carbon",
-              "dose": "1",
+              "dose": "5",
               "fromBuffer": true,
               "rowIndex": 4,
               "firstVisibleRow": 0,
               "scrollRequired": false,
               "point": {
-                "x": 200.47087378640776,
-                "y": 457.888349514563
+                "x": 224.01941747572818,
+                "y": 459.1966019417474
               },
-              "amountHundredths": 100,
+              "amountHundredths": 500,
               "bufferAfter": [
                 {
                   "prototype": "Silicon",
@@ -4495,15 +5587,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -4513,7 +5605,7 @@
               "beakerAfter": [
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 3
+                  "amount": 15
                 }
               ],
               "temperature": 293.15,
@@ -4532,7 +5624,7 @@
                 "x": 490.90291262135923,
                 "y": 122.97572815533981
               },
-              "amountHundredths": 300,
+              "amountHundredths": 1500,
               "bufferAfter": [
                 {
                   "prototype": "Silicon",
@@ -4548,15 +5640,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 99
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -4564,670 +5656,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 3
-                }
-              ],
-              "beakerAfter": [],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Oxygen",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 3,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 433.6856796116504
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 99
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 99
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 3
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Oxygen",
-                  "amount": 1
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Sugar",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 5,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 482.0910194174756
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 99
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 3
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Oxygen",
-                  "amount": 1
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 1
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Carbon",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 4,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 457.888349514563
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 3
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 3
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": [
-                "Inaprovaline"
-              ]
-            },
-            {
-              "prototype": "Inaprovaline",
-              "dose": "all",
-              "fromBuffer": false,
-              "rowIndex": 0,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 490.90291262135923,
-                "y": 122.97572815533981
-              },
-              "amountHundredths": 300,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 6
-                }
-              ],
-              "beakerAfter": [],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Oxygen",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 3,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 433.6856796116504
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 6
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Oxygen",
-                  "amount": 1
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Sugar",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 5,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 482.0910194174756
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 98
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 6
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Oxygen",
-                  "amount": 1
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 1
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Carbon",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 4,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 457.888349514563
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 6
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 3
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": [
-                "Inaprovaline"
-              ]
-            },
-            {
-              "prototype": "Inaprovaline",
-              "dose": "all",
-              "fromBuffer": false,
-              "rowIndex": 0,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 490.90291262135923,
-                "y": 122.97572815533981
-              },
-              "amountHundredths": 300,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 9
-                }
-              ],
-              "beakerAfter": [],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Oxygen",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 3,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 433.6856796116504
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 9
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Oxygen",
-                  "amount": 1
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Sugar",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 5,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 482.0910194174756
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 97
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 9
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Oxygen",
-                  "amount": 1
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 1
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Carbon",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 4,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 457.888349514563
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 9
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 3
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": [
-                "Inaprovaline"
-              ]
-            },
-            {
-              "prototype": "Inaprovaline",
-              "dose": "all",
-              "fromBuffer": false,
-              "rowIndex": 0,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 490.90291262135923,
-                "y": 122.97572815533981
-              },
-              "amountHundredths": 300,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 90
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 30
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 12
+                  "amount": 15
                 }
               ],
               "beakerAfter": [],
@@ -5261,15 +5690,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5277,7 +5706,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 12
+                  "amount": 15
                 }
               ],
               "beakerAfter": [
@@ -5316,15 +5745,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5332,7 +5761,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 }
               ],
               "beakerAfter": [
@@ -5373,15 +5802,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5389,7 +5818,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -5502,15 +5931,15 @@
             },
             {
               "prototype": "Oxygen",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Carbon",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Sugar",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Dylovene",
@@ -5518,7 +5947,7 @@
             },
             {
               "prototype": "Inaprovaline",
-              "amount": 2
+              "amount": 5
             },
             {
               "prototype": "Tricordrazine",
@@ -5540,15 +5969,15 @@
             },
             {
               "prototype": "Oxygen",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Carbon",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Sugar",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Dylovene",
@@ -5556,7 +5985,7 @@
             },
             {
               "prototype": "Inaprovaline",
-              "amount": 2
+              "amount": 5
             },
             {
               "prototype": "Tricordrazine",
@@ -5591,15 +6020,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5607,7 +6036,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -5650,15 +6079,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5666,7 +6095,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -5709,15 +6138,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5725,7 +6154,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -5768,15 +6197,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5784,7 +6213,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -5827,15 +6256,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5843,7 +6272,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -5890,15 +6319,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5906,7 +6335,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -5953,15 +6382,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -5969,7 +6398,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -6016,15 +6445,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -6032,7 +6461,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -6079,15 +6508,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -6095,7 +6524,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -6148,15 +6577,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -6164,7 +6593,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -6217,15 +6646,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -6233,7 +6662,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -6286,15 +6715,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -6302,7 +6731,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -6347,15 +6776,15 @@
                 },
                 {
                   "prototype": "Oxygen",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Carbon",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Sugar",
-                  "amount": 96
+                  "amount": 95
                 },
                 {
                   "prototype": "Dylovene",
@@ -6363,7 +6792,7 @@
                 },
                 {
                   "prototype": "Inaprovaline",
-                  "amount": 2
+                  "amount": 5
                 },
                 {
                   "prototype": "Tricordrazine",
@@ -6427,15 +6856,15 @@
             },
             {
               "prototype": "Oxygen",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Carbon",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Sugar",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Dylovene",
@@ -6443,7 +6872,7 @@
             },
             {
               "prototype": "Inaprovaline",
-              "amount": 2
+              "amount": 5
             },
             {
               "prototype": "Tricordrazine",
@@ -6465,15 +6894,15 @@
             },
             {
               "prototype": "Oxygen",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Carbon",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Sugar",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Dylovene",
@@ -6481,7 +6910,7 @@
             },
             {
               "prototype": "Inaprovaline",
-              "amount": 2
+              "amount": 5
             },
             {
               "prototype": "Tricordrazine",
@@ -6508,39 +6937,6 @@
             "steps": [
               {
                 "number": 1,
-                "prototype": "Inaprovaline",
-                "displayName": "инапровалин",
-                "targetAmount": 3,
-                "operation": "mix",
-                "actionText": "смешивание",
-                "inputs": [
-                  {
-                    "prototype": "Oxygen",
-                    "name": "кислород",
-                    "amount": 1,
-                    "catalyst": false
-                  },
-                  {
-                    "prototype": "Sugar",
-                    "name": "сахар",
-                    "amount": 1,
-                    "catalyst": false
-                  },
-                  {
-                    "prototype": "Carbon",
-                    "name": "углерод",
-                    "amount": 1,
-                    "catalyst": false
-                  }
-                ],
-                "byproducts": [],
-                "gasProducts": [],
-                "minimumTemperatureKelvinExclusive": null,
-                "maximumTemperatureKelvinExclusive": null,
-                "requiresExternalApparatus": false
-              },
-              {
-                "number": 2,
                 "prototype": "Tricordrazine",
                 "displayName": "трикордразин",
                 "targetAmount": 10,
@@ -6576,27 +6972,12 @@
               {
                 "prototype": "Inaprovaline",
                 "displayName": "инапровалин",
-                "amount": 2
-              },
-              {
-                "prototype": "Oxygen",
-                "displayName": "кислород",
-                "amount": 1
-              },
-              {
-                "prototype": "Sugar",
-                "displayName": "сахар",
-                "amount": 1
+                "amount": 5
               },
               {
                 "prototype": "Tricordrazine",
                 "displayName": "трикордразин",
                 "amount": 20
-              },
-              {
-                "prototype": "Carbon",
-                "displayName": "углерод",
-                "amount": 1
               }
             ],
             "baseRequirements": [],
@@ -6617,15 +6998,15 @@
             },
             {
               "prototype": "Oxygen",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Carbon",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Sugar",
-              "amount": 96
+              "amount": 95
             },
             {
               "prototype": "Dylovene",
@@ -6633,7 +7014,7 @@
             },
             {
               "prototype": "Inaprovaline",
-              "amount": 2
+              "amount": 5
             },
             {
               "prototype": "Tricordrazine",
@@ -6675,243 +7056,6 @@
             }
           ],
           "actions": [
-            {
-              "prototype": "Oxygen",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 3,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 433.6856796116504
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 32
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 2
-                },
-                {
-                  "prototype": "Tricordrazine",
-                  "amount": 20
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Oxygen",
-                  "amount": 1
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Sugar",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 5,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 482.0910194174756
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 96
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 32
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 2
-                },
-                {
-                  "prototype": "Tricordrazine",
-                  "amount": 20
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Oxygen",
-                  "amount": 1
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 1
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": []
-            },
-            {
-              "prototype": "Carbon",
-              "dose": "1",
-              "fromBuffer": true,
-              "rowIndex": 4,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 200.47087378640776,
-                "y": 457.888349514563
-              },
-              "amountHundredths": 100,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 32
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 2
-                },
-                {
-                  "prototype": "Tricordrazine",
-                  "amount": 20
-                }
-              ],
-              "beakerAfter": [
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 3
-                }
-              ],
-              "temperature": 293.15,
-              "reactions": [
-                "Inaprovaline"
-              ]
-            },
-            {
-              "prototype": "Inaprovaline",
-              "dose": "all",
-              "fromBuffer": false,
-              "rowIndex": 0,
-              "firstVisibleRow": 0,
-              "scrollRequired": false,
-              "point": {
-                "x": 490.90291262135923,
-                "y": 122.97572815533981
-              },
-              "amountHundredths": 300,
-              "bufferAfter": [
-                {
-                  "prototype": "Silicon",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Nitrogen",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Potassium",
-                  "amount": 86
-                },
-                {
-                  "prototype": "Oxygen",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Carbon",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Sugar",
-                  "amount": 95
-                },
-                {
-                  "prototype": "Dylovene",
-                  "amount": 32
-                },
-                {
-                  "prototype": "Inaprovaline",
-                  "amount": 5
-                },
-                {
-                  "prototype": "Tricordrazine",
-                  "amount": 20
-                }
-              ],
-              "beakerAfter": [],
-              "temperature": 293.15,
-              "reactions": []
-            },
             {
               "prototype": "Dylovene",
               "dose": "5",

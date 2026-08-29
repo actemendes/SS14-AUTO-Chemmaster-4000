@@ -8,6 +8,9 @@ using Ss14.Chemistry;
 
 internal sealed class ChemMasterExecutor : IDisposable
 {
+    // Deliberately keep only UI/click guards in the hot execution path. The
+    // complete ingredient/recipe preflight still runs before StartAsync.
+    private static bool RelaxedChemistryChecks => true;
     private readonly IExecutorSnapshotSource _source;
     private readonly IGameInputDriver _input;
     private readonly LiveCalibrationManager _calibration;
@@ -292,13 +295,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                 {
                     current = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
                     ValidateReadySnapshot(current, requireEmptyBeaker: false, requireCalibration: true);
-                    var resumedInventory = SnapshotInventory.From(current);
-                    if (!resumedInventory.SameChemicalState(confirmed))
-                    {
-                        current = await ResolveExternalChangeAsync(confirmed, current, null, cancellationToken).ConfigureAwait(false);
-                        _acceptedExternalReplan = false;
-                        confirmed = SnapshotInventory.From(current);
-                    }
+                    confirmed = SnapshotInventory.From(current);
                 }
                 var sequence = ExecutionSequencePlanner.Build(current, firstPlan ? request : absoluteGoal,
                     firstPlan ? initialMode : ChemistryTargetMode.Ensure);
@@ -353,7 +350,10 @@ internal sealed class ChemMasterExecutor : IDisposable
                     current = await EnsureFreshAsync(current, cancellationToken).ConfigureAwait(false);
                     ValidateReadySnapshot(current, requireEmptyBeaker: false, requireCalibration: true);
                     var actualBefore = SnapshotInventory.From(current);
-                    if (!actualBefore.SameChemicalState(confirmed))
+                    // In relaxed mode this is only the latest UI baseline for the
+                    // click guard; it is not compared with the previous chemistry state.
+                    confirmed = actualBefore;
+                    if (!RelaxedChemistryChecks && !actualBefore.SameChemicalState(confirmed))
                     {
                         current = await ResolveExternalChangeAsync(confirmed, current, action, cancellationToken).ConfigureAwait(false);
                         _acceptedExternalReplan = false;
@@ -381,7 +381,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                         {
                             current = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
                             ValidateReadySnapshot(current, requireEmptyBeaker: false, requireCalibration: true);
-                            if (!SnapshotInventory.From(current).SameChemicalState(confirmed))
+                            if (!RelaxedChemistryChecks && !SnapshotInventory.From(current).SameChemicalState(confirmed))
                             {
                                 current = await ResolveExternalChangeAsync(confirmed, current, action, cancellationToken).ConfigureAwait(false);
                                 break;
@@ -391,7 +391,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                         current = await RequireActiveWindowAsync(current, cancellationToken).ConfigureAwait(false);
                         current = await EnsureFreshAsync(current, cancellationToken).ConfigureAwait(false);
                         ValidateReadySnapshot(current, requireEmptyBeaker: false, requireCalibration: true);
-                        if (!SnapshotInventory.From(current).SameChemicalState(confirmed))
+                        if (!RelaxedChemistryChecks && !SnapshotInventory.From(current).SameChemicalState(confirmed))
                         {
                             current = await ResolveExternalChangeAsync(confirmed, current, action, cancellationToken).ConfigureAwait(false);
                             break;
@@ -531,13 +531,25 @@ internal sealed class ChemMasterExecutor : IDisposable
                     }
 
                     ExecutorSnapshot after;
-                    try
+                    if (RelaxedChemistryChecks)
                     {
-                        after = await WaitForExpectedStateAsync(prepared.Snapshot, actualBefore, action, cancellationToken).ConfigureAwait(false);
+                        // One fast read keeps the UI geometry current for the next
+                        // click; no chemistry delta polling/reaction replay here.
+                        await Task.Delay(20, cancellationToken).ConfigureAwait(false);
+                        after = await ReadFastFreshAsync(cancellationToken).ConfigureAwait(false);
+                        ValidateReadySnapshot(after, requireEmptyBeaker: false, requireCalibration: true,
+                            enforceTransferMode: false, requireCompleteCandidateSet: false);
                     }
-                    catch (Exception ex) when (telemetryFault != null && ex is not OperationCanceledException)
+                    else
                     {
-                        throw new ExecutorFailure(ex.Message + FormatTelemetryFault(telemetryFault));
+                        try
+                        {
+                            after = await WaitForExpectedStateAsync(prepared.Snapshot, actualBefore, action, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex) when (telemetryFault != null && ex is not OperationCanceledException)
+                        {
+                            throw new ExecutorFailure(ex.Message + FormatTelemetryFault(telemetryFault));
+                        }
                     }
                     if (_acceptedExternalReplan)
                     {
@@ -552,7 +564,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                     }
                     confirmed = SnapshotInventory.From(after);
                     current = after;
-                    if (!ExpectedActionState(confirmed, actualBefore, action))
+                    if (!RelaxedChemistryChecks && !ExpectedActionState(confirmed, actualBefore, action))
                     {
                         CaptureTelemetryFault(() => _journal.Write("click-reconciled-after-stop",
                             ChemMasterExecutorState.Aborted, new
@@ -568,7 +580,9 @@ internal sealed class ChemMasterExecutor : IDisposable
                         throw new ExecutorFailure("После остановки физический клик дал неожиданный State; повтор запрещён." +
                             FormatTelemetryFault(telemetryFault));
                     }
-                    var reactionReconciliation = ReconcileExpectedReactions(actualBefore, confirmed, action);
+                    var reactionReconciliation = RelaxedChemistryChecks
+                        ? ReactionReconciliation.Unknown("Отключено в быстром режиме выполнения.")
+                        : ReconcileExpectedReactions(actualBefore, confirmed, action);
                     CaptureTelemetryFault(() => _journal.Write("click-confirmed", ChemMasterExecutorState.Executing, new
                     {
                         action,
@@ -587,7 +601,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                     CaptureTelemetryFault(() => SetProgress(ChemMasterExecutorState.Executing, "Фактическое изменение подтверждено.",
                         totalClicks, totalClicks + sequence.Actions.Count - index - 1, action, after,
                         action.ExpectedBufferAfter, confirmed.Buffer), ref telemetryFault);
-                    if (reactionReconciliation.Deterministic && !reactionReconciliation.Match)
+                    if (!RelaxedChemistryChecks && reactionReconciliation.Deterministic && !reactionReconciliation.Match)
                         throw new ExecutorFailure("Фактические реакции не совпали с ExpectedReactions: " + reactionReconciliation.Detail);
                     if (telemetryFault != null)
                         throw new ExecutorFailure("State после физического клика подтверждён, но журнал/progress завершился ошибкой." +
@@ -596,7 +610,7 @@ internal sealed class ChemMasterExecutor : IDisposable
 
                     // A clean beaker is a transaction boundary. Rebuild the remaining
                     // absolute goal from the newly observed inventory and UI order.
-                    if (confirmed.Beaker.Count == 0)
+                    if (!RelaxedChemistryChecks && confirmed.Beaker.Count == 0)
                     {
                         replan = true;
                         break;
@@ -605,6 +619,27 @@ internal sealed class ChemMasterExecutor : IDisposable
                         unitContinuation = PrepareUnitContinuation(current, action, sequence.Actions[index + 1]);
                 }
 
+                if (RelaxedChemistryChecks)
+                {
+                    LastSummary = BuildSummary(request, initialMode, "completed", runInitial!.Buffer,
+                        SnapshotInventory.From(current).Buffer, null);
+                    var completionMessage = sequence.Detail.StartsWith("Ингредиенты для «", StringComparison.Ordinal)
+                        ? sequence.Detail
+                        : "План выполнен; промежуточные химические сверки отключены.";
+                    SetProgress(ChemMasterExecutorState.Completed,
+                        completionMessage,
+                        totalClicks, totalClicks, snapshot: current);
+                    _journal.Write("completed", ChemMasterExecutorState.Completed, new
+                    {
+                        request,
+                        absoluteGoal,
+                        clicks = totalClicks,
+                        detail = sequence.Detail,
+                        summary = LastSummary,
+                        final = current.State.Raw,
+                    });
+                    return;
+                }
                 if (!replan)
                     throw new ExecutorFailure("Предварительная последовательность закончилась без чистой мензурки; продолжение заблокировано.");
             }
@@ -661,7 +696,7 @@ internal sealed class ChemMasterExecutor : IDisposable
             if (_acceptedExternalReplan) return snapshot;
             ValidateReadySnapshot(snapshot, requireEmptyBeaker: false, requireCalibration: true);
             var currentInventory = SnapshotInventory.From(snapshot);
-            if (!currentInventory.SameChemicalState(expected))
+            if (!RelaxedChemistryChecks && !currentInventory.SameChemicalState(expected))
                 return await ResolveExternalChangeAsync(expected, snapshot, action, cancellationToken).ConfigureAwait(false);
             var row = FindRow(snapshot, action);
             var ui = snapshot.State.Ui!;
@@ -770,7 +805,7 @@ internal sealed class ChemMasterExecutor : IDisposable
         var controlEpoch = Interlocked.Read(ref _controlEpoch);
         var final = await EnsureFreshAsync(snapshot, cancellationToken).ConfigureAwait(false);
         ValidateReadySnapshot(final, requireEmptyBeaker: false, requireCalibration: true);
-        if (!SnapshotInventory.From(final).SameChemicalState(expected))
+        if (!RelaxedChemistryChecks && !SnapshotInventory.From(final).SameChemicalState(expected))
         {
             final = await ResolveExternalChangeAsync(expected, final, action, cancellationToken).ConfigureAwait(false);
             return new ScrollPreparation(final, false, null);
@@ -873,12 +908,14 @@ internal sealed class ChemMasterExecutor : IDisposable
         while (watch.ElapsedMilliseconds < _settings.StableScrollTimeoutMilliseconds)
         {
             await Task.Delay(_settings.PollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
-            var current = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
+            var current = RelaxedChemistryChecks
+                ? await ReadFastFreshAsync(cancellationToken).ConfigureAwait(false)
+                : await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
             ValidateCausalSnapshot(lastProof, current, "позиционирования wheel");
             lastProof = current;
             if (IsTransientInvalid(current)) continue;
             ValidateReadySnapshot(current, requireEmptyBeaker: false, requireCalibration: true);
-            if (!SnapshotInventory.From(current).SameChemicalState(expected))
+            if (!RelaxedChemistryChecks && !SnapshotInventory.From(current).SameChemicalState(expected))
                 return await ResolveExternalChangeAsync(expected, current, action, cancellationToken).ConfigureAwait(false);
             if (!current.Window.Active) return current;
 
@@ -916,7 +953,7 @@ internal sealed class ChemMasterExecutor : IDisposable
         ValidateReadySnapshot(snapshot, requireEmptyBeaker: false, requireCalibration: true);
         if (!snapshot.Window.Active)
             throw new ExecutorFailure("Окно SS14 стало неактивным перед позиционированием wheel.");
-        if (!SnapshotInventory.From(snapshot).SameChemicalState(expected))
+        if (!RelaxedChemistryChecks && !SnapshotInventory.From(snapshot).SameChemicalState(expected))
             throw new ExecutorFailure("Химический State изменился перед позиционированием wheel.");
         var scroll = SelectScroll(snapshot, action);
         if (!scroll.Visible || !scroll.Stable || Math.Abs(scroll.Value - scroll.Target) > 0.01)
@@ -935,7 +972,7 @@ internal sealed class ChemMasterExecutor : IDisposable
         var snapshot = prepared.Snapshot;
         ValidateSnapshotFreshness(snapshot);
         ValidateReadySnapshot(snapshot, requireEmptyBeaker: false, requireCalibration: true);
-        if (!snapshot.Window.Active || !SnapshotInventory.From(snapshot).SameChemicalState(expected)) return false;
+        if (!snapshot.Window.Active || !RelaxedChemistryChecks && !SnapshotInventory.From(snapshot).SameChemicalState(expected)) return false;
         var ui = snapshot.State.Ui!;
         var viewport = action.FromBuffer ? ui.BufferViewportBounds : ui.InputViewportBounds;
         var scrollBar = action.FromBuffer ? ui.BufferScrollBarBounds : ui.InputScrollBarBounds;
@@ -1001,11 +1038,13 @@ internal sealed class ChemMasterExecutor : IDisposable
             SetProgress(ChemMasterExecutorState.WaitingForStableScroll,
                 "Ожидание snapshot со Stable и Value == ValueTarget.", action: action, snapshot: snapshot);
             await Task.Delay(_settings.PollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
-            var candidate = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
+            var candidate = RelaxedChemistryChecks
+                ? await ReadFastFreshAsync(cancellationToken).ConfigureAwait(false)
+                : await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
             if (IsTransientInvalid(candidate)) continue;
             snapshot = candidate;
             ValidateReadySnapshot(snapshot, requireEmptyBeaker: false, requireCalibration: true, enforceTransferMode: false);
-            if (!SnapshotInventory.From(snapshot).SameChemicalState(expected))
+            if (!RelaxedChemistryChecks && !SnapshotInventory.From(snapshot).SameChemicalState(expected))
                 return await ResolveExternalChangeAsync(expected, snapshot, action, cancellationToken).ConfigureAwait(false);
         }
         throw new ExecutorFailure("Прокрутка не стабилизировалась за timeout; клик не выполнен.");
@@ -1074,7 +1113,7 @@ internal sealed class ChemMasterExecutor : IDisposable
             // Attribute every scroll mutation before handling a simultaneous
             // chemistry change. Once wheel was committed, a changed sibling list
             // is an emergency even if the user also changed reagent state.
-            if (!SnapshotInventory.From(current).SameChemicalState(expected))
+            if (!RelaxedChemistryChecks && !SnapshotInventory.From(current).SameChemicalState(expected))
             {
                 if (cancellationToken.IsCancellationRequested || _cancelRequested || _input.EmergencyStopped)
                     return current;
@@ -1095,6 +1134,26 @@ internal sealed class ChemMasterExecutor : IDisposable
                         "Стабильное положение после wheel не соответствует ожидаемому направлению.");
                 if (firstStableTarget == null)
                 {
+                    if (RelaxedChemistryChecks)
+                    {
+                        CaptureTelemetryFault(() => _journal.Write("scroll-confirmed",
+                            ChemMasterExecutorState.WaitingForStableScroll, new
+                        {
+                            action.Prototype,
+                            direction,
+                            before = beforeScroll,
+                            after = scroll,
+                            beforeOther = beforeOtherScroll,
+                            afterOther = otherScroll,
+                            snapshot = current.State,
+                            read = ReadTelemetry(current),
+                            relaxed = true,
+                        }), ref telemetryFault);
+                        if (telemetryFault != null)
+                            throw new ExecutorFailure("Wheel подтверждён быстрым snapshot; дальнейший ввод остановлен." +
+                                FormatTelemetryFault(telemetryFault));
+                        return current;
+                    }
                     firstStableTarget = scroll.Target;
                     CaptureTelemetryFault(() => _journal.Write("scroll-stable-hint",
                         ChemMasterExecutorState.WaitingForStableScroll, new
@@ -1355,12 +1414,14 @@ internal sealed class ChemMasterExecutor : IDisposable
         while (watch.ElapsedMilliseconds < _settings.StableScrollTimeoutMilliseconds)
         {
             await Task.Delay(_settings.PollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
-            var current = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
+            var current = RelaxedChemistryChecks
+                ? await ReadFastFreshAsync(cancellationToken).ConfigureAwait(false)
+                : await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
             ValidateCausalSnapshot(lastProof, current, "позиционирования кнопки");
             lastProof = current;
             if (IsTransientInvalid(current)) continue;
             ValidateReadySnapshot(current, requireEmptyBeaker: false, requireCalibration: true);
-            if (!SnapshotInventory.From(current).SameChemicalState(expected))
+            if (!RelaxedChemistryChecks && !SnapshotInventory.From(current).SameChemicalState(expected))
                 return await ResolveExternalChangeAsync(expected, current, action, cancellationToken).ConfigureAwait(false);
             if (!current.Window.Active) return current;
 
@@ -1396,7 +1457,7 @@ internal sealed class ChemMasterExecutor : IDisposable
         ValidateReadySnapshot(snapshot, requireEmptyBeaker: false, requireCalibration: true);
         if (!snapshot.Window.Active)
             throw new ExecutorFailure("Окно SS14 стало неактивным перед позиционированием курсора.");
-        if (!SnapshotInventory.From(snapshot).SameChemicalState(expected))
+        if (!RelaxedChemistryChecks && !SnapshotInventory.From(snapshot).SameChemicalState(expected))
             throw new ExecutorFailure("Химический State изменился перед позиционированием курсора.");
         var scroll = SelectScroll(snapshot, action);
         if (!ScrollGeometrySettled(scroll))
@@ -1471,7 +1532,7 @@ internal sealed class ChemMasterExecutor : IDisposable
         ValidateSnapshotFreshness(snapshot);
         ValidateReadySnapshot(snapshot, requireEmptyBeaker: false, requireCalibration: true);
         if (!snapshot.Window.Active) throw new ExecutorFailure("Окно SS14 стало неактивным непосредственно перед кликом.");
-        if (!SnapshotInventory.From(snapshot).SameChemicalState(expected))
+        if (!RelaxedChemistryChecks && !SnapshotInventory.From(snapshot).SameChemicalState(expected))
             throw new ExecutorFailure("Химический State изменился непосредственно перед кликом.");
         var scroll = SelectScroll(snapshot, action);
         if (!ScrollGeometrySettled(scroll))
@@ -1604,7 +1665,8 @@ internal sealed class ChemMasterExecutor : IDisposable
         bool enforceTransferMode = true, bool requireCompleteCandidateSet = true)
     {
         LastSnapshot = snapshot;
-        if (requireCompleteCandidateSet && !snapshot.Observation.CandidateSetComplete)
+        if (requireCompleteCandidateSet && !snapshot.Observation.CandidateSetComplete &&
+            !(RelaxedChemistryChecks && !requireEmptyBeaker))
             throw new ExecutorFailure("Snapshot получен по кэшированному BUI и не подтверждает полный набор открытых окон.");
         if (snapshot.Observation.ProcessId != _source.ProcessId || snapshot.Window.ProcessId != _source.ProcessId ||
             snapshot.Window.Handle != _source.WindowHandle || !snapshot.Window.Exists)

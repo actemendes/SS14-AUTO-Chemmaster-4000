@@ -1,6 +1,6 @@
 # Офлайн-тесты Химмастера
 
-Результат: **519/519 пройдено**, ошибок: 0.
+Результат: **700/701 пройдено**, ошибок: 1.
 
 SS220: `86d0f7bffb5f3f4d3ee7bef3b9080c2e37b7ec03`. Правил реакций: 345. Прототипов веществ: 453.
 
@@ -13,13 +13,14 @@ SS220: `86d0f7bffb5f3f4d3ee7bef3b9080c2e37b7ec03`. Правил реакций: 
 | rows | 8 | 8 |
 | transfer | 5 | 5 |
 | reactions | 7 | 7 |
-| production | 18 | 18 |
+| production | 17 | 18 |
 | capacity | 6 | 6 |
 | catalyst | 2 | 2 |
-| selected-medicines | 75 | 75 |
+| selected-medicines | 257 | 257 |
 | stock-matrix | 256 | 256 |
 | seed-4000 | 100 | 100 |
-| guards | 25 | 25 |
+| guards | 24 | 24 |
+| manual | 1 | 1 |
 
 ## Что это проверяет
 
@@ -72,7 +73,7 @@ SS220: `86d0f7bffb5f3f4d3ee7bef3b9080c2e37b7ec03`. Правил реакций: 
 | PASS | production | Частичный запас — готовить только недостающее  |
 | PASS | production | Два готовых промежуточных препарата  |
 | PASS | production | Инапровалин 12u — безопасные малые партии вместо побочного бикаридина  |
-| PASS | production | Округление промежуточных партий 5u → 6u и возврат остатков  |
+| FAIL | production | Округление промежуточных партий 5u → 6u и возврат остатков Остаток диловена: expected 100, got 1000 |
 | PASS | production | Резерв целей: диловен нельзя целиком отдать в трикордразин  |
 | PASS | production | Повторяющиеся цели суммируются  |
 | PASS | production | Повторяющиеся малые цели округляются одной общей партией  |
@@ -170,6 +171,188 @@ SS220: `86d0f7bffb5f3f4d3ee7bef3b9080c2e37b7ec03`. Правил реакций: 
 | PASS | selected-medicines | Cognizine: уже есть ровно 10u  |
 | PASS | selected-medicines | Oculine: отсутствует и нет исходников  |
 | PASS | selected-medicines | Oculine: уже есть ровно 10u  |
+| PASS | selected-medicines | PotassiumIodide: отсутствует и нет исходников  |
+| PASS | selected-medicines | PotassiumIodide: уже есть ровно 10u  |
+| PASS | selected-medicines | Ultravasculine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Ultravasculine: уже есть ровно 10u  |
+| PASS | selected-medicines | Heparin: отсутствует и нет исходников  |
+| PASS | selected-medicines | Heparin: уже есть ровно 10u  |
+| PASS | selected-medicines | Harai: отсутствует и нет исходников  |
+| PASS | selected-medicines | Harai: уже есть ровно 10u  |
+| PASS | selected-medicines | Fomepizole: отсутствует и нет исходников  |
+| PASS | selected-medicines | Fomepizole: уже есть ровно 10u  |
+| PASS | selected-medicines | Lipozine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Lipozine: уже есть ровно 10u  |
+| PASS | selected-medicines | Diphenylmethylamine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Diphenylmethylamine: уже есть ровно 10u  |
+| PASS | selected-medicines | Ethyloxyephedrine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Ethyloxyephedrine: уже есть ровно 10u  |
+| PASS | selected-medicines | Synaptizine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Synaptizine: уже есть ровно 10u  |
+| PASS | selected-medicines | TranexamicAcid: отсутствует и нет исходников  |
+| PASS | selected-medicines | TranexamicAcid: уже есть ровно 10u  |
+| PASS | selected-medicines | Nicergoline: отсутствует и нет исходников  |
+| PASS | selected-medicines | Nicergoline: уже есть ровно 10u  |
+| PASS | selected-medicines | Arcryox: отсутствует и нет исходников  |
+| PASS | selected-medicines | Arcryox: уже есть ровно 10u  |
+| PASS | selected-medicines | Saline: отсутствует и нет исходников  |
+| PASS | selected-medicines | Saline: уже есть ровно 10u  |
+| PASS | selected-medicines | Cryptobiolin: отсутствует и нет исходников  |
+| PASS | selected-medicines | Cryptobiolin: уже есть ровно 10u  |
+| PASS | selected-medicines | Impedrezene: отсутствует и нет исходников  |
+| PASS | selected-medicines | Impedrezene: уже есть ровно 10u  |
+| PASS | selected-medicines | Ephedrine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Ephedrine: уже есть ровно 10u  |
+| PASS | selected-medicines | Opium: отсутствует и нет исходников  |
+| PASS | selected-medicines | Opium: уже есть ровно 10u  |
+| PASS | selected-medicines | Stimulants: отсутствует и нет исходников  |
+| PASS | selected-medicines | Stimulants: уже есть ровно 10u  |
+| PASS | selected-medicines | Nocturine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Nocturine: уже есть ровно 10u  |
+| PASS | selected-medicines | Happiness: отсутствует и нет исходников  |
+| PASS | selected-medicines | Happiness: уже есть ровно 10u  |
+| PASS | selected-medicines | SpaceDrugs: отсутствует и нет исходников  |
+| PASS | selected-medicines | SpaceDrugs: уже есть ровно 10u  |
+| PASS | selected-medicines | NorepinephricAcid: отсутствует и нет исходников  |
+| PASS | selected-medicines | NorepinephricAcid: уже есть ровно 10u  |
+| PASS | selected-medicines | MuteToxin: отсутствует и нет исходников  |
+| PASS | selected-medicines | MuteToxin: уже есть ровно 10u  |
+| PASS | selected-medicines | Desoxyephedrine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Desoxyephedrine: уже есть ровно 10u  |
+| PASS | selected-medicines | Aglomorphine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Aglomorphine: уже есть ровно 10u  |
+| PASS | selected-medicines | Pax: отсутствует и нет исходников  |
+| PASS | selected-medicines | Pax: уже есть ровно 10u  |
+| PASS | selected-medicines | Frontier: отсутствует и нет исходников  |
+| PASS | selected-medicines | Frontier: уже есть ровно 10u  |
+| PASS | selected-medicines | Napalm: отсутствует и нет исходников  |
+| PASS | selected-medicines | Napalm: уже есть ровно 10u  |
+| PASS | selected-medicines | ChlorineTrifluoride: отсутствует и нет исходников  |
+| PASS | selected-medicines | ChlorineTrifluoride: уже есть ровно 10u  |
+| PASS | selected-medicines | FoamingAgent: отсутствует и нет исходников  |
+| PASS | selected-medicines | FoamingAgent: уже есть ровно 10u  |
+| PASS | selected-medicines | Thermite: отсутствует и нет исходников  |
+| PASS | selected-medicines | Thermite: уже есть ровно 10u  |
+| PASS | selected-medicines | Phlogiston: отсутствует и нет исходников  |
+| PASS | selected-medicines | Phlogiston: уже есть ровно 10u  |
+| PASS | selected-medicines | Fluorosurfactant: отсутствует и нет исходников  |
+| PASS | selected-medicines | Fluorosurfactant: уже есть ровно 10u  |
+| PASS | selected-medicines | Felinase: отсутствует и нет исходников  |
+| PASS | selected-medicines | Felinase: уже есть ровно 10u  |
+| PASS | selected-medicines | ChloralHydrate: отсутствует и нет исходников  |
+| PASS | selected-medicines | ChloralHydrate: уже есть ровно 10u  |
+| PASS | selected-medicines | CorgiJuice: отсутствует и нет исходников  |
+| PASS | selected-medicines | CorgiJuice: уже есть ровно 10u  |
+| PASS | selected-medicines | MindbreakerToxin: отсутствует и нет исходников  |
+| PASS | selected-medicines | MindbreakerToxin: уже есть ровно 10u  |
+| PASS | selected-medicines | Caninase: отсутствует и нет исходников  |
+| PASS | selected-medicines | Caninase: уже есть ровно 10u  |
+| PASS | selected-medicines | Razorium: отсутствует и нет исходников  |
+| PASS | selected-medicines | Razorium: уже есть ровно 10u  |
+| PASS | selected-medicines | BuzzochloricBees: отсутствует и нет исходников  |
+| PASS | selected-medicines | BuzzochloricBees: уже есть ровно 10u  |
+| PASS | selected-medicines | Tazinide: отсутствует и нет исходников  |
+| PASS | selected-medicines | Tazinide: уже есть ровно 10u  |
+| PASS | selected-medicines | UnstableMutagen: отсутствует и нет исходников  |
+| PASS | selected-medicines | UnstableMutagen: уже есть ровно 10u  |
+| PASS | selected-medicines | Hemorrhinol: отсутствует и нет исходников  |
+| PASS | selected-medicines | Hemorrhinol: уже есть ровно 10u  |
+| PASS | selected-medicines | Lipolicide: отсутствует и нет исходников  |
+| PASS | selected-medicines | Lipolicide: уже есть ровно 10u  |
+| PASS | selected-medicines | Lexorin: отсутствует и нет исходников  |
+| PASS | selected-medicines | Lexorin: уже есть ровно 10u  |
+| PASS | selected-medicines | Licoxide: отсутствует и нет исходников  |
+| PASS | selected-medicines | Licoxide: уже есть ровно 10u  |
+| PASS | selected-medicines | SulfuricAcid: отсутствует и нет исходников  |
+| PASS | selected-medicines | SulfuricAcid: уже есть ровно 10u  |
+| PASS | selected-medicines | HeartbreakerToxin: отсутствует и нет исходников  |
+| PASS | selected-medicines | HeartbreakerToxin: уже есть ровно 10u  |
+| PASS | selected-medicines | PolytrinicAcid: отсутствует и нет исходников  |
+| PASS | selected-medicines | PolytrinicAcid: уже есть ровно 10u  |
+| PASS | selected-medicines | Fresium: отсутствует и нет исходников  |
+| PASS | selected-medicines | Fresium: уже есть ровно 10u  |
+| PASS | selected-medicines | FluorosulfuricAcid: отсутствует и нет исходников  |
+| PASS | selected-medicines | FluorosulfuricAcid: уже есть ровно 10u  |
+| PASS | selected-medicines | Ketchup: отсутствует и нет исходников  |
+| PASS | selected-medicines | Ketchup: уже есть ровно 10u  |
+| PASS | selected-medicines | Coldsauce: отсутствует и нет исходников  |
+| PASS | selected-medicines | Coldsauce: уже есть ровно 10u  |
+| PASS | selected-medicines | TableSalt: отсутствует и нет исходников  |
+| PASS | selected-medicines | TableSalt: уже есть ровно 10u  |
+| PASS | selected-medicines | Ketchunaise: отсутствует и нет исходников  |
+| PASS | selected-medicines | Ketchunaise: уже есть ровно 10u  |
+| PASS | selected-medicines | Mustard: отсутствует и нет исходников  |
+| PASS | selected-medicines | Mustard: уже есть ровно 10u  |
+| PASS | selected-medicines | Protein: отсутствует и нет исходников  |
+| PASS | selected-medicines | Protein: уже есть ровно 10u  |
+| PASS | selected-medicines | Soysauce: отсутствует и нет исходников  |
+| PASS | selected-medicines | Soysauce: уже есть ровно 10u  |
+| PASS | selected-medicines | Vinaigrette: отсутствует и нет исходников  |
+| PASS | selected-medicines | Vinaigrette: уже есть ровно 10u  |
+| PASS | selected-medicines | BbqSauce: отсутствует и нет исходников  |
+| PASS | selected-medicines | BbqSauce: уже есть ровно 10u  |
+| PASS | selected-medicines | EggCooked: отсутствует и нет исходников  |
+| PASS | selected-medicines | EggCooked: уже есть ровно 10u  |
+| PASS | selected-medicines | Vinegar: отсутствует и нет исходников  |
+| PASS | selected-medicines | Vinegar: уже есть ровно 10u  |
+| PASS | selected-medicines | Hotsauce: отсутствует и нет исходников  |
+| PASS | selected-medicines | Hotsauce: уже есть ровно 10u  |
+| PASS | selected-medicines | Mayo: отсутствует и нет исходников  |
+| PASS | selected-medicines | Mayo: уже есть ровно 10u  |
+| PASS | selected-medicines | Oil: отсутствует и нет исходников  |
+| PASS | selected-medicines | Oil: уже есть ровно 10u  |
+| PASS | selected-medicines | Left4Zed: отсутствует и нет исходников  |
+| PASS | selected-medicines | Left4Zed: уже есть ровно 10u  |
+| PASS | selected-medicines | Diethylamine: отсутствует и нет исходников  |
+| PASS | selected-medicines | Diethylamine: уже есть ровно 10u  |
+| PASS | selected-medicines | RobustHarvest: отсутствует и нет исходников  |
+| PASS | selected-medicines | RobustHarvest: уже есть ровно 10u  |
+| PASS | selected-medicines | EZNutrient: отсутствует и нет исходников  |
+| PASS | selected-medicines | EZNutrient: уже есть ровно 10u  |
+| PASS | selected-medicines | Sedin: отсутствует и нет исходников  |
+| PASS | selected-medicines | Sedin: уже есть ровно 10u  |
+| PASS | selected-medicines | Ammonia: отсутствует и нет исходников  |
+| PASS | selected-medicines | Ammonia: уже есть ровно 10u  |
+| PASS | selected-medicines | PlantBGone: отсутствует и нет исходников  |
+| PASS | selected-medicines | PlantBGone: уже есть ровно 10u  |
+| PASS | selected-medicines | Blood: отсутствует и нет исходников  |
+| PASS | selected-medicines | Blood: уже есть ровно 10u  |
+| PASS | selected-medicines | SodiumHydroxide: отсутствует и нет исходников  |
+| PASS | selected-medicines | SodiumHydroxide: уже есть ровно 10u  |
+| PASS | selected-medicines | Laughter: отсутствует и нет исходников  |
+| PASS | selected-medicines | Laughter: уже есть ровно 10u  |
+| PASS | selected-medicines | Benzene: отсутствует и нет исходников  |
+| PASS | selected-medicines | Benzene: уже есть ровно 10u  |
+| PASS | selected-medicines | Bleach: отсутствует и нет исходников  |
+| PASS | selected-medicines | Bleach: уже есть ровно 10u  |
+| PASS | selected-medicines | Ash: отсутствует и нет исходников  |
+| PASS | selected-medicines | Ash: уже есть ровно 10u  |
+| PASS | selected-medicines | Fersilicite: отсутствует и нет исходников  |
+| PASS | selected-medicines | Fersilicite: уже есть ровно 10u  |
+| PASS | selected-medicines | Lye: отсутствует и нет исходников  |
+| PASS | selected-medicines | Lye: уже есть ровно 10u  |
+| PASS | selected-medicines | Charcoal: отсутствует и нет исходников  |
+| PASS | selected-medicines | Charcoal: уже есть ровно 10u  |
+| PASS | selected-medicines | SpaceLube: отсутствует и нет исходников  |
+| PASS | selected-medicines | SpaceLube: уже есть ровно 10u  |
+| PASS | selected-medicines | SodiumPolyacrylate: отсутствует и нет исходников  |
+| PASS | selected-medicines | SodiumPolyacrylate: уже есть ровно 10u  |
+| PASS | selected-medicines | SodiumCarbonate: отсутствует и нет исходников  |
+| PASS | selected-medicines | SodiumCarbonate: уже есть ровно 10u  |
+| PASS | selected-medicines | ArtifactGlue: отсутствует и нет исходников  |
+| PASS | selected-medicines | ArtifactGlue: уже есть ровно 10u  |
+| PASS | selected-medicines | Ice: отсутствует и нет исходников  |
+| PASS | selected-medicines | Ice: уже есть ровно 10u  |
+| PASS | selected-medicines | Hydroxide: отсутствует и нет исходников  |
+| PASS | selected-medicines | Hydroxide: уже есть ровно 10u  |
+| PASS | selected-medicines | SpaceCleaner: отсутствует и нет исходников  |
+| PASS | selected-medicines | SpaceCleaner: уже есть ровно 10u  |
+| PASS | selected-medicines | Carpetium: отсутствует и нет исходников  |
+| PASS | selected-medicines | Carpetium: уже есть ровно 10u  |
+| PASS | selected-medicines | Phenol: отсутствует и нет исходников  |
+| PASS | selected-medicines | Phenol: уже есть ровно 10u  |
+| PASS | selected-medicines | Acetone: отсутствует и нет исходников  |
+| PASS | selected-medicines | Acetone: уже есть ровно 10u  |
 | PASS | stock-matrix | Трикордразин: готовые D/I=0, маска шести исходников=00, sort=none  |
 | PASS | stock-matrix | Трикордразин: готовые D/I=0, маска шести исходников=01, sort=alphabetical  |
 | PASS | stock-matrix | Трикордразин: готовые D/I=0, маска шести исходников=02, sort=quantity  |
@@ -533,7 +716,7 @@ SS220: `86d0f7bffb5f3f4d3ee7bef3b9080c2e37b7ec03`. Правил реакций: 
 | PASS | guards | Активен режим уничтожения  |
 | PASS | guards | Грязная входная ёмкость  |
 | PASS | guards | Не помещается минимальная партия  |
-| PASS | guards | Требуется нагрев и газовый эффект  |
+| PASS | manual | Ингредиенты внешнего этапа остаются в мензурке  |
 | PASS | guards | Неизвестная цель среди известных запрещает частичное выполнение  |
 | PASS | guards | Отрицательная цель  |
 | PASS | guards | Нулевая цель  |

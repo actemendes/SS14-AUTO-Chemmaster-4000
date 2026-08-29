@@ -16,6 +16,7 @@ internal sealed class MainForm : Form
     private readonly RecipeCatalogService _catalog;
     private readonly IReadOnlyDictionary<string, string> _chemicalNames;
     private readonly IReadOnlyList<UiMedicineChoice> _medicineChoices;
+    private readonly IReadOnlyList<CategoryFilter> _categoryFilters;
     private readonly Dictionary<string, TargetSelection> _targets;
     // A consistent ClrMD/UI scan is intentionally substantial (about 2 seconds on
     // the validated live client). Keep the idle refresh far enough apart that the
@@ -31,6 +32,7 @@ internal sealed class MainForm : Form
     private readonly Label _stepLabel = NewStatusLabel("Шаг: —");
     private readonly Label _previewLabel = NewStatusLabel("Предпросмотр ещё не выполнен.");
     private readonly TextBox _searchBox = new() { Dock = DockStyle.Fill, PlaceholderText = "Русское имя, prototype или категория" };
+    private readonly ComboBox _categoryBox = new() { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly ComboBox _modeBox = new() { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly DataGridView _medicineGrid = CreateGrid(readOnly: false);
     private readonly DataGridView _bufferGrid = CreateGrid();
@@ -82,13 +84,23 @@ internal sealed class MainForm : Form
             .Select(group =>
             {
                 var first = group.First();
-                var categories = string.Join(", ", group.Select(item => item.CategoryName)
+                var visibleCategories = group.Where(item => !item.CategoryId.Equals("chemmaster-all", StringComparison.OrdinalIgnoreCase));
+                var categoryIds = visibleCategories.Select(item => item.CategoryId)
+                    .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                var categories = string.Join(", ", visibleCategories.Select(item => item.CategoryName)
                     .Distinct(StringComparer.CurrentCultureIgnoreCase)
                     .OrderBy(item => item, StringComparer.CurrentCultureIgnoreCase));
-                return new UiMedicineChoice(first.Prototype, first.DisplayName, categories,
+                return new UiMedicineChoice(first.Prototype, first.DisplayName, categories, categoryIds,
                     group.Any(item => item.Resolved), NormalizeSearch(first.Prototype + " " + first.DisplayName + " " + categories));
             })
             .OrderBy(item => item.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+        _categoryFilters = _catalog.Medicines
+            .Where(item => !item.CategoryId.Equals("chemmaster-all", StringComparison.OrdinalIgnoreCase))
+            .GroupBy(item => item.CategoryId, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new CategoryFilter(group.Key, group.First().CategoryName))
+            .OrderBy(item => item.Id.StartsWith("wiki-", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(item => item.Text, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
         _targets = _medicineChoices.ToDictionary(item => item.Prototype,
             _ => new TargetSelection(), StringComparer.OrdinalIgnoreCase);
@@ -102,6 +114,10 @@ internal sealed class MainForm : Form
         BuildLayout();
         ConfigureGrids();
         WireEvents();
+        _categoryBox.Items.Add(new CategoryFilter("", "Все категории"));
+        foreach (var category in _categoryFilters)
+            _categoryBox.Items.Add(category);
+        _categoryBox.SelectedIndex = 0;
         PopulateMedicineGrid();
         _modeBox.Items.Add(new ModeChoice(ChemistryTargetMode.Ensure, "ensure — довести запас до количества"));
         _modeBox.Items.Add(new ModeChoice(ChemistryTargetMode.Make, "make — приготовить дополнительно"));
@@ -252,13 +268,16 @@ internal sealed class MainForm : Form
         panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
 
-        var filters = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
-        filters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
-        filters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+        var filters = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2 };
+        filters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
+        filters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 37));
+        filters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
         filters.Controls.Add(new Label { Text = "Поиск лекарства", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 0);
-        filters.Controls.Add(new Label { Text = "Общий режим", AutoSize = true, Anchor = AnchorStyles.Left }, 1, 0);
+        filters.Controls.Add(new Label { Text = "Категория", AutoSize = true, Anchor = AnchorStyles.Left }, 1, 0);
+        filters.Controls.Add(new Label { Text = "Общий режим", AutoSize = true, Anchor = AnchorStyles.Left }, 2, 0);
         filters.Controls.Add(_searchBox, 0, 1);
-        filters.Controls.Add(_modeBox, 1, 1);
+        filters.Controls.Add(_categoryBox, 1, 1);
+        filters.Controls.Add(_modeBox, 2, 1);
         panel.Controls.Add(filters, 0, 0);
         panel.Controls.Add(_medicineGrid, 0, 1);
 
@@ -397,6 +416,7 @@ internal sealed class MainForm : Form
     private void WireEvents()
     {
         _searchBox.TextChanged += (_, _) => PopulateMedicineGrid();
+        _categoryBox.SelectedIndexChanged += (_, _) => PopulateMedicineGrid();
         _medicineGrid.CurrentCellDirtyStateChanged += (_, _) =>
         {
             if (_medicineGrid.IsCurrentCellDirty) _medicineGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
@@ -587,14 +607,13 @@ internal sealed class MainForm : Form
                 $"Начать выполнение {seriesCount} серий " +
                 $"({sequence.Actions.Count} подтверждаемых нажатий)?\n\n" +
                 $"Режим: {mode}\nЦели: {request}\n\n" +
-                "Входная мензурка должна быть пустой. Окно помощника свернётся, SS14 будет активирован. " +
+                "Входная мензурка должна быть пустой. Фокус переключится на SS14; состояние окон не изменится. " +
                 "Для немедленной остановки нажмите F12.",
                 "Явный запуск", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
                 MessageBoxDefaultButton.Button2);
             if (answer != DialogResult.Yes) return;
 
             _executionTask = _executor.StartAsync(request, mode);
-            WindowState = FormWindowState.Minimized;
             _executor.TryActivateGame();
             await _executionTask;
         }
@@ -608,9 +627,6 @@ internal sealed class MainForm : Form
             _operationBusy = false;
             if (!IsDisposed && !_allowClose)
             {
-                WindowState = FormWindowState.Normal;
-                Show();
-                Activate();
                 await RefreshConnectionAsync(forceRediscovery: false, showErrors: false);
             }
             UpdateButtons();
@@ -763,8 +779,10 @@ internal sealed class MainForm : Form
         {
             _medicineGrid.Rows.Clear();
             var query = NormalizeSearch(_searchBox.Text);
+            var categoryId = (_categoryBox.SelectedItem as CategoryFilter)?.Id ?? "";
             foreach (var medicine in _medicineChoices.Where(item => query.Length == 0 ||
-                         item.SearchText.Contains(query, StringComparison.Ordinal)))
+                         item.SearchText.Contains(query, StringComparison.Ordinal)).Where(item =>
+                         categoryId.Length == 0 || item.CategoryIds.Contains(categoryId, StringComparer.OrdinalIgnoreCase)))
             {
                 var target = _targets[medicine.Prototype];
                 var index = _medicineGrid.Rows.Add(target.Selected, medicine.DisplayName, medicine.Prototype,
@@ -999,6 +1017,7 @@ internal sealed class MainForm : Form
                                _hotkeyAvailable && !EmergencyLatched;
         _medicineGrid.Enabled = !running && !_operationBusy;
         _searchBox.Enabled = !running && !_operationBusy;
+        _categoryBox.Enabled = !running && !_operationBusy;
         _modeBox.Enabled = !running && !_operationBusy;
         _pauseButton.Enabled = running && !external && !paused;
         _resumeButton.Enabled = running && !external && paused;
@@ -1052,7 +1071,7 @@ internal sealed class MainForm : Form
     {
         using var form = new MainForm();
         form.RunPreviewInvalidationUiStateTest();
-        return "checkbox+amount+mode invalidation lifecycle OK";
+        return "checkbox+amount+mode invalidation and category/search filtering OK";
     }
 
     private void RunPreviewInvalidationUiStateTest()
@@ -1090,6 +1109,27 @@ internal sealed class MainForm : Form
         AssertDisplayedPreviewForUiStateTest();
         _modeBox.SelectedIndex = _modeBox.SelectedIndex == 0 ? 1 : 0;
         AssertInvalidatedPreviewForUiStateTest("mode");
+
+        var narcoticsFilter = _categoryBox.Items.Cast<CategoryFilter>().Single(item =>
+            item.Id.Equals("wiki-narcotics", StringComparison.OrdinalIgnoreCase));
+        _categoryBox.SelectedItem = narcoticsFilter;
+        if (_medicineGrid.Rows.Count != 13)
+            throw new InvalidOperationException($"Narcotics filter returned {_medicineGrid.Rows.Count} rows instead of 13.");
+        if (_medicineGrid.Rows.Cast<DataGridViewRow>().Any(row =>
+                row.Tag is not UiMedicineChoice medicine ||
+                !medicine.CategoryIds.Contains("wiki-narcotics", StringComparer.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Category filter displayed an item from another category.");
+
+        _searchBox.Text = "опиум";
+        if (_medicineGrid.Rows.Count != 1 ||
+            _medicineGrid.Rows[0].Tag is not UiMedicineChoice filteredMedicine ||
+            !filteredMedicine.Prototype.Equals("Opium", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Search and category filters were not combined correctly.");
+
+        _searchBox.Clear();
+        _categoryBox.SelectedIndex = 0;
+        if (_medicineGrid.Rows.Count != _medicineChoices.Count)
+            throw new InvalidOperationException("Clearing filters did not restore the complete target list.");
     }
 
     private DataGridViewRow FindMedicineRowForUiStateTest(string prototype) =>
@@ -1265,8 +1305,13 @@ internal sealed class MainForm : Form
         public override string ToString() => Text;
     }
 
+    private sealed record CategoryFilter(string Id, string Text)
+    {
+        public override string ToString() => Text;
+    }
+
     private sealed record DiscoveredClient(int ProcessId, long WindowHandle, string DacPath);
 
     private sealed record UiMedicineChoice(string Prototype, string DisplayName, string CategoryName,
-        bool Resolved, string SearchText);
+        IReadOnlyList<string> CategoryIds, bool Resolved, string SearchText);
 }

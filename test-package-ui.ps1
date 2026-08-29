@@ -197,7 +197,7 @@ try {
     $uiStateOutput = [Convert]::ToString((Get-Content -Raw -LiteralPath $uiStateOutputPath)).Trim()
     $uiStateError = [Convert]::ToString((Get-Content -Raw -LiteralPath $uiStateErrorPath)).Trim()
     Assert-Condition ($uiStateProcess.ExitCode -eq 0) "Packaged UI-state regression exited with $($uiStateProcess.ExitCode): $uiStateError"
-    Assert-Condition ($uiStateOutput -match '^UI STATE OK: checkbox\+amount\+mode invalidation lifecycle OK$') 'Packaged UI-state regression did not report the expected lifecycle.'
+    Assert-Condition ($uiStateOutput -match '^UI STATE OK: checkbox\+amount\+mode invalidation and category/search filtering OK$') 'Packaged UI-state regression did not report the expected lifecycle and filtering checks.'
     Assert-Condition ([string]::IsNullOrWhiteSpace($uiStateError)) "Packaged UI-state regression wrote stderr: $uiStateError"
 }
 finally {

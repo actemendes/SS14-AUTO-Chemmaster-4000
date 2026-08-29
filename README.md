@@ -57,7 +57,7 @@ Runtime не использует GPT, ChatGPT, Codex, Computer Use, брауз�
 
 - `src\ChemMaster\chemistry-recipes.json` — 237 веществ и 215 вариантов рецептов;
 - `src\ChemMaster\chemistry-game-rules.json` — зафиксированные игровые реакции виртуального стенда;
-- `src\ChemMaster\chemistry-selections.json` — 38 выбираемых лекарств в 19 категориях;
+- `src\ChemMaster\chemistry-selections.json` — полный список целей смешивания Химмастера плюс удобные медицинские категории;
 - `tests\fixtures\chemmaster-input.test.json` — отдельная тестовая калибровка.
 
 Read-only CLI и планировщик:
