@@ -112,24 +112,45 @@ internal static class ChemistryVirtual
                 plan = ChemistryPlanning.BuildForSimulation(request, machine.Buffer.Inventory(), gameRules: machine.Rules);
             }
             if (plan.BaseRequirements.Count != 0)
-                throw new VirtualStop("needs-reagents", "Не хватает: " + string.Join("; ", plan.BaseRequirements.Select(x => $"{x.Prototype}={x.Amount:0.##}")));
+                throw new VirtualStop("needs-reagents", "Не хватает: " + string.Join("; ",
+                    plan.BaseRequirements.Select(x =>
+                        $"{ChemistryPlanning.BilingualChemicalName(x.Prototype, x.DisplayName)}={x.Amount:0.##}")));
+
+            var hotReactionConflicts = job.TwoPhaseHotBeaker
+                ? HotReactionConflictsBeforeExternal(plan, machine.Rules)
+                : new List<string>();
+            var coldPhase = hotReactionConflicts.Count != 0;
 
             // Validate the complete job on a clone first, including reactions after EACH
             // button press. A preflight failure leaves the caller's virtual inventory intact.
             var trial = machine.Clone();
             var commands = new List<VirtualCommand>();
             ChemistryPlanning.PlanStepOutput? externalPreparation = null;
+            ChemistryPlanning.PlanStepOutput? hotStepAfterColdPhase = null;
             foreach (var step in plan.Steps)
             {
-                if (step.RequiresExternalApparatus || step.GasProducts.Count != 0)
+                if (step.RequiresExternalApparatus)
                 {
+                    if (coldPhase)
+                    {
+                        hotStepAfterColdPhase = step;
+                        break;
+                    }
                     PrepareExternalStep(trial, step, commands);
                     externalPreparation = step;
                     break;
                 }
                 Produce(trial, step, commands);
             }
-            if (externalPreparation == null)
+            if (coldPhase)
+            {
+                if (trial.Beaker.Volume != 0)
+                    throw new VirtualStop("cold-phase-not-clean",
+                        "Холодная фаза не завершилась с пустой входной мензуркой.");
+                if (hotStepAfterColdPhase == null && goals.Any(x => trial.Buffer.Get(x.Key) < x.Value))
+                    throw new VirtualStop("target-not-reached", "Холодная фаза не подтвердила все конечные цели.");
+            }
+            else if (externalPreparation == null)
             {
                 if (goals.Any(x => trial.Buffer.Get(x.Key) < x.Value))
                     throw new VirtualStop("target-not-reached", "Проверка итогового состава не подтвердила все цели.");
@@ -144,27 +165,32 @@ internal static class ChemistryVirtual
                 beforeApply?.Invoke(i, machine);
                 executed.Add(machine.Apply(commands[i]));
             }
-            var detail = externalPreparation == null
-                ? "Цели проверены, содержимое мензурки возвращено в буфер."
-                : ExternalPreparationDetail(externalPreparation);
+            var detail = coldPhase
+                ? ColdPhaseDetail(hotReactionConflicts, hotStepAfterColdPhase)
+                : externalPreparation == null
+                    ? "Цели проверены, содержимое мензурки возвращено в буфер."
+                    : ExternalPreparationDetail(externalPreparation);
             return new VirtualJobResult(job.Request, "completed", detail,
-                plan, initial, machine.Buffer.Export(), executed);
+                plan, initial, machine.Buffer.Export(), executed,
+                coldPhase, hotStepAfterColdPhase != null, hotReactionConflicts);
         }
         catch (VirtualStop stop)
         {
-            return new VirtualJobResult(job.Request, stop.Code, stop.Message, plan, initial, machine.Buffer.Export(), executed);
+            return new VirtualJobResult(job.Request, stop.Code, stop.Message, plan, initial,
+                machine.Buffer.Export(), executed, false, false, Array.Empty<string>());
         }
     }
 
     private static void Produce(VirtualChemMaster machine, ChemistryPlanning.PlanStepOutput step,
         List<VirtualCommand> commands)
     {
-        if (step.RequiresExternalApparatus || step.GasProducts.Count != 0)
+        if (step.RequiresExternalApparatus)
             throw new VirtualStop("external-condition", step.Prototype + ": нужны внешние условия/эффекты; автоматического нагрева нет.");
         var rule = machine.Rules.Reactions.FirstOrDefault(rule => Matches(step, rule));
         if (rule == null) throw new VirtualStop("recipe-mismatch", step.Prototype + ": план вики не совпал с игровым рецептом.");
-        if (rule.HasEffects || rule.MixerCategories.Count != 0)
+        if (rule.HasEffects && step.GasProducts.Count == 0 || rule.MixerCategories.Count != 0)
             throw new VirtualStop("unsupported-reaction", rule.Id + ": эффекты или внешнее смешивающее устройство.");
+        string? allowedEffectReaction = rule.HasEffects ? rule.Id : null;
         var yield = rule.Outputs.Single(x => x.Prototype == step.Prototype).Amount;
         decimal remaining = step.TargetAmount / yield;
         int quantum = Enumerable.Range(1, 100).First(n => rule.Inputs.Where(x => !x.Catalyst)
@@ -193,7 +219,8 @@ internal static class ChemistryVirtual
             VirtualStop? failure = null;
             foreach (decimal repeats in sizes.OrderByDescending(x => x))
             {
-                foreach (var order in Orders(step.Inputs.Select(x => x.Prototype).ToList()).Take(120))
+                foreach (var order in RankedOrders(machine.Rules, rule,
+                             step.Inputs.Select(x => x.Prototype).ToList()).Take(120))
                 {
                     var batch = machine.Clone();
                     var candidate = new List<VirtualCommand>();
@@ -205,7 +232,8 @@ internal static class ChemistryVirtual
                         foreach (string id in order)
                         {
                             var input = rule.Inputs.Single(x => x.Prototype == id);
-                            TransferExact(batch, id, Cents(input.Amount * (input.Catalyst ? 1 : repeats)), candidate);
+                            TransferExact(batch, id, Cents(input.Amount * (input.Catalyst ? 1 : repeats)), candidate,
+                                allowedEffectReaction);
                         }
                         if (!SameContents(batch.Beaker, expected))
                             throw new VirtualStop("unexpected-reaction", step.Prototype + ": получился другой состав или реакция не завершилась.");
@@ -238,18 +266,43 @@ internal static class ChemistryVirtual
         if (repeats <= 0)
             throw new VirtualStop("invalid-plan", step.Prototype + ": неверный объём внешнего этапа.");
 
+        int quantum = Enumerable.Range(1, 100).FirstOrDefault(n => rule.Inputs
+            .Where(input => !input.Catalyst)
+            .All(input => input.Amount * n == decimal.Truncate(input.Amount * n)));
+        if (quantum == 0)
+            throw new VirtualStop("unreachable-dose", step.Prototype +
+                ": температурную реакцию нельзя разбить на точные кнопочные партии.");
+        decimal catalysts = rule.Inputs.Where(input => input.Catalyst).Sum(input => input.Amount);
+        decimal perRepeat = Math.Max(
+            rule.Inputs.Where(input => !input.Catalyst).Sum(input => input.Amount),
+            rule.Outputs.Sum(output => output.Amount));
+        decimal available = machine.Capacity / 100m - machine.Beaker.Volume / 100m - catalysts;
+        decimal batchMax = decimal.Floor(available / perRepeat / quantum) * quantum;
+        if (batchMax < quantum)
+            throw new VirtualStop("capacity-too-small", step.Prototype +
+                ": даже минимальная температурная партия не помещается во входную мензурку.");
+        var batchRepeats = Math.Min(repeats, batchMax);
+        if (batchRepeats % quantum != 0)
+            throw new VirtualStop("unreachable-dose", step.Prototype +
+                ": температурная партия не выражается точными кнопочными дозами.");
+
         var required = rule.Inputs.Select(input => new
         {
             input.Prototype,
-            Amount = Cents(input.Amount * (input.Catalyst ? 1 : repeats)),
+            Amount = Cents(input.Amount * (input.Catalyst ? 1 : batchRepeats)),
         }).ToList();
         var total = checked(required.Sum(input => input.Amount));
         if (total > machine.Capacity - machine.Beaker.Volume)
             throw new VirtualStop("capacity-too-small", step.Prototype +
                 ": ингредиенты внешнего этапа не помещаются во входную мензурку.");
 
-        foreach (var input in required)
+        var order = RankedOrders(machine.Rules, rule, required.Select(input => input.Prototype).ToList())
+            .First();
+        foreach (var prototype in order)
+        {
+            var input = required.Single(item => item.Prototype == prototype);
             TransferExact(machine, input.Prototype, input.Amount, commands);
+        }
     }
 
     private static string ExternalPreparationDetail(ChemistryPlanning.PlanStepOutput step)
@@ -268,6 +321,51 @@ internal static class ChemistryVirtual
             string.Join("; ", conditions) + ".";
     }
 
+    private static string ColdPhaseDetail(IReadOnlyList<string> conflicts,
+        ChemistryPlanning.PlanStepOutput? hotStepAfterColdPhase)
+    {
+        var next = hotStepAfterColdPhase == null
+            ? "После неё все цели будут готовы; возвращать горячую мензурку не потребуется."
+            : $"После неё программа попросит вернуть горячую мензурку и продолжит с «{hotStepAfterColdPhase.DisplayName}».";
+        return "Двухфазный план: сначала нужна холодная мензурка, потому что нагрев запускает конкурирующие реакции: " +
+            string.Join("; ", conflicts) + ". " + next;
+    }
+
+    internal static List<string> HotReactionConflictsBeforeExternal(
+        ChemistryPlanning.ChemistryPlanOutput plan, GameChemistryRules rules)
+    {
+        const float roomTemperature = 293.15f;
+        var result = new List<string>();
+        foreach (var step in plan.Steps)
+        {
+            if (step.RequiresExternalApparatus)
+                break;
+
+            var target = rules.Reactions.FirstOrDefault(rule => Matches(step, rule));
+            if (target == null)
+                continue;
+            var available = step.Inputs
+                .Where(input => input.Amount > 0)
+                .ToDictionary(input => input.Prototype, input => input.Amount, StringComparer.Ordinal);
+            foreach (var candidate in rules.Reactions)
+            {
+                if (StringComparer.Ordinal.Equals(candidate.Id, target.Id) ||
+                    candidate.MixerCategories.Count != 0 || candidate.MinTemperature <= roomTemperature ||
+                    !candidate.Inputs.All(input => available.ContainsKey(input.Prototype)))
+                    continue;
+
+                var commonTemperature = Math.Max(candidate.MinTemperature,
+                    Math.Max(target.MinTemperature, roomTemperature + 0.01f));
+                if (candidate.MaxTemperature is { } candidateMax && commonTemperature > candidateMax ||
+                    target.MaxTemperature is { } targetMax && commonTemperature > targetMax)
+                    continue;
+
+                result.Add($"{step.DisplayName} [{step.Prototype}] → {candidate.Id} при ≥{candidate.MinTemperature:0.##} K");
+            }
+        }
+        return result.Distinct(StringComparer.Ordinal).ToList();
+    }
+
     private static IEnumerable<List<string>> Orders(List<string> values)
     {
         if (values.Count == 0) { yield return new List<string>(); yield break; }
@@ -277,6 +375,26 @@ internal static class ChemistryVirtual
                 suffix.Insert(0, values[i]);
                 yield return suffix;
             }
+    }
+
+    private static IEnumerable<List<string>> RankedOrders(GameChemistryRules rules, GameReaction target,
+        List<string> values) => Orders(values)
+        .OrderBy(order => PrematureReactionRisk(rules, target, order));
+
+    private static int PrematureReactionRisk(GameChemistryRules rules, GameReaction target,
+        IReadOnlyList<string> order)
+    {
+        var present = new HashSet<string>(StringComparer.Ordinal);
+        var risk = 0;
+        for (var index = 0; index + 1 < order.Count; index++)
+        {
+            present.Add(order[index]);
+            risk = checked(risk + rules.Reactions.Count(candidate =>
+                !StringComparer.Ordinal.Equals(candidate.Id, target.Id) &&
+                candidate.MixerCategories.Count == 0 &&
+                candidate.Inputs.All(input => present.Contains(input.Prototype))));
+        }
+        return risk;
     }
 
     private static bool Matches(ChemistryPlanning.PlanStepOutput step, GameReaction rule)
@@ -292,9 +410,12 @@ internal static class ChemistryVirtual
     internal static bool SameContents(VirtualSolution solution, IReadOnlyDictionary<string, int> expected) =>
         solution.Items.Count == expected.Count && expected.All(x => solution.Get(x.Key) == x.Value);
 
-    private static void TransferExact(VirtualChemMaster machine, string id, int amount, List<VirtualCommand> commands)
+    private static void TransferExact(VirtualChemMaster machine, string id, int amount, List<VirtualCommand> commands,
+        string? allowedEffectReaction = null)
     {
-        if (machine.Buffer.Get(id) < amount) throw new VirtualStop("needs-reagents", "Недостаточно " + id + " при пошаговой проверке.");
+        if (machine.Buffer.Get(id) < amount)
+            throw new VirtualStop("needs-reagents",
+                "Недостаточно " + machine.BilingualChemicalName(id) + " при пошаговой проверке.");
         int remaining = amount;
         while (remaining > 0)
         {
@@ -306,16 +427,17 @@ internal static class ChemistryVirtual
                 if (n == 0) throw new VirtualStop("unreachable-dose", id + ": дробь нельзя точно отмерить кнопками из этого остатка.");
                 dose = n.ToString(CultureInfo.InvariantCulture);
             }
-            int moved = AddCommand(machine, id, dose, true, commands).AmountHundredths;
+            int moved = AddCommand(machine, id, dose, true, commands, allowedEffectReaction).AmountHundredths;
             if (moved <= 0 || moved > remaining) throw new VirtualStop("transfer-mismatch", "Перенесён неверный объём.");
             remaining -= moved;
         }
     }
 
-    private static VirtualAction AddCommand(VirtualChemMaster machine, string id, string dose, bool fromBuffer, List<VirtualCommand> commands)
+    private static VirtualAction AddCommand(VirtualChemMaster machine, string id, string dose, bool fromBuffer,
+        List<VirtualCommand> commands, string? allowedEffectReaction = null)
     {
         if (commands.Count >= 10000) throw new VirtualStop("action-limit", "Слишком большой сценарий (>10000 нажатий).");
-        var command = machine.Prepare(id, dose, fromBuffer);
+        var command = machine.Prepare(id, dose, fromBuffer, allowedEffectReaction);
         var action = machine.Apply(command);
         commands.Add(command);
         return action;
@@ -345,17 +467,20 @@ internal sealed class VirtualJob
 {
     public string Request { get; set; } = "";
     public string Mode { get; set; } = "ensure";
+    public bool TwoPhaseHotBeaker { get; set; }
 }
 internal sealed record VirtualReagent(string Prototype, decimal Amount);
 internal sealed record VirtualQuantity(string Prototype, int Amount);
 internal sealed record VirtualCommand(string ExpectedState, string Prototype, string Dose, bool FromBuffer, int RowIndex,
-    int FirstVisibleRow, bool ScrollRequired, CalibrationPoint? Point);
+    int FirstVisibleRow, bool ScrollRequired, CalibrationPoint? Point, string? AllowedEffectReaction);
 internal sealed record VirtualAction(string Prototype, string Dose, bool FromBuffer, int RowIndex, int FirstVisibleRow,
     bool ScrollRequired, CalibrationPoint? Point, int AmountHundredths, List<VirtualReagent> BufferAfter,
     List<VirtualReagent> BeakerAfter, float Temperature, List<string> Reactions);
 internal sealed record VirtualJobResult(string Request, string Status, string Detail,
     ChemistryPlanning.ChemistryPlanOutput? Plan, List<VirtualReagent> InitialBuffer,
-    List<VirtualReagent> FinalBuffer, List<VirtualAction> Actions);
+    List<VirtualReagent> FinalBuffer, List<VirtualAction> Actions,
+    bool RequiresColdBeaker, bool RequiresHotBeakerAfterActions,
+    IReadOnlyList<string> HotReactionConflicts);
 
 internal sealed class VirtualSolution
 {
@@ -467,7 +592,10 @@ internal sealed class VirtualChemMaster
         _bufferScroll, _inputScroll
     }))));
 
-    public VirtualCommand Prepare(string id, string dose, bool fromBuffer)
+    public string BilingualChemicalName(string prototype) => ChemistryPlanning.BilingualChemicalName(
+        prototype, _names.GetValueOrDefault(prototype, prototype));
+
+    public VirtualCommand Prepare(string id, string dose, bool fromBuffer, string? allowedEffectReaction = null)
     {
         CheckReady();
         if (!ChemCalibration.Doses.Contains(dose)) throw new VirtualStop("invalid-dose", "Нет такой кнопки дозировки.");
@@ -489,7 +617,8 @@ internal sealed class VirtualChemMaster
                 point = ChemCalibration.PreviewVirtualReagentPoint(Profile, ui, list, id, dose, first, Profile.Regions["frame"]);
             }
         }
-        return new VirtualCommand(Fingerprint(), id, dose, fromBuffer, row.RowIndex, first, scroll, point);
+        return new VirtualCommand(Fingerprint(), id, dose, fromBuffer, row.RowIndex, first, scroll, point,
+            allowedEffectReaction);
     }
 
     public VirtualAction Apply(VirtualCommand command)
@@ -509,11 +638,11 @@ internal sealed class VirtualChemMaster
         if (command.FromBuffer)
         {
             Beaker.Add(command.Prototype, taken);
-            if (taken > 0) React(reactions);
+            if (taken > 0) React(reactions, command.AllowedEffectReaction);
         }
         else
         {
-            if (taken > 0) React(reactions);
+            if (taken > 0) React(reactions, command.AllowedEffectReaction);
             // Direct AddReagent, not UpdateChemicals(buffer): UI transfers do NOT mix the buffer.
             Buffer.Add(command.Prototype, taken);
         }
@@ -535,7 +664,7 @@ internal sealed class VirtualChemMaster
         return heat;
     }
 
-    private void React(List<string> applied)
+    private void React(List<string> applied, string? allowedEffectReaction)
     {
         var ordered = Rules.Reactions.OrderByDescending(x => x.Priority).ThenBy(x => x.Outputs.Count).ThenBy(x => x.Id, StringComparer.Ordinal);
         for (int iteration = 0; iteration < 20; iteration++)
@@ -567,7 +696,8 @@ internal sealed class VirtualChemMaster
                 if (Beaker.Volume > Capacity) throw new VirtualStop("overflow", "Реакция переполнила ёмкость; разлив не моделируется.");
                 return;
             }
-            if (reaction.HasEffects) throw new VirtualStop("unsupported-reaction", reaction.Id + ": сработал эффект (газ/взрыв/иное), которого нет в модели.");
+            if (reaction.HasEffects && !reaction.Id.Equals(allowedEffectReaction, StringComparison.Ordinal))
+                throw new VirtualStop("unsupported-reaction", reaction.Id + ": сработал неожиданный эффект (газ/взрыв/иное), которого нет в модели.");
             float energy = reaction.ConserveEnergy ? HeatCapacity() * Beaker.Temperature : 0;
             foreach (var input in reaction.Inputs.Where(x => !x.Catalyst))
                 Beaker.Remove(input.Prototype, checked((int)((long)ChemistryVirtual.Cents(input.Amount) * repeats / 100)), false);

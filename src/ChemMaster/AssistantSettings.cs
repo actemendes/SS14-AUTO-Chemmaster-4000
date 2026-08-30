@@ -13,6 +13,8 @@ internal sealed class AssistantSettings
     public int MaximumActions { get; set; } = 10000;
     public int ExpectedTransferMode { get; set; } = 0;
     public bool ActivateGameOnStart { get; set; } = true;
+    public bool TurboMode { get; set; }
+    public bool TwoPhaseHotBeaker { get; set; } = true;
     public string EmergencyHotkey { get; set; } = "F12";
     public string LogDirectory { get; set; } = "logs";
 
@@ -28,6 +30,18 @@ internal sealed class AssistantSettings
         }) ?? throw new InvalidDataException("settings.json пуст или повреждён.");
         settings.Validate();
         return settings;
+    }
+
+    public void Save(string path)
+    {
+        Validate();
+        var temporary = path + ".tmp";
+        File.WriteAllText(temporary, JsonSerializer.Serialize(this, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+        }));
+        File.Move(temporary, path, overwrite: true);
     }
 
     public void Validate()

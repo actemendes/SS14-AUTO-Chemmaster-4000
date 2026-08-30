@@ -8,6 +8,8 @@
   "maximumActions": 10000,
   "expectedTransferMode": 0,
   "activateGameOnStart": true,
+  "turboMode": false,
+  "twoPhaseHotBeaker": true,
   "emergencyHotkey": "F12",
   "logDirectory": "logs"
 }

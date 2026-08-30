@@ -5,22 +5,28 @@ using System.Linq;
 
 internal static class ExecutionSequencePlanner
 {
-    public static ExecutionSequence Build(ExecutorSnapshot snapshot, string request, ChemistryTargetMode mode)
+    public static ExecutionSequence Build(ExecutorSnapshot snapshot, string request, ChemistryTargetMode mode,
+        bool allowPreparedBeakerRecovery = false, bool twoPhaseHotBeaker = false)
     {
         var state = snapshot.State;
         if (!state.InterfaceOpen || !state.SnapshotValid || state.Raw == null)
             return Blocked(request, request, mode, "invalid-snapshot", state.Error ?? "ChemMaster не открыт или State недостоверен.");
-        return Build(state.Raw, request, mode);
+        return Build(state.Raw, request, mode, allowPreparedBeakerRecovery, twoPhaseHotBeaker);
     }
 
-    internal static ExecutionSequence Build(ChemMasterRawSnapshot raw, string request, ChemistryTargetMode mode)
+    internal static ExecutionSequence Build(ChemMasterRawSnapshot raw, string request, ChemistryTargetMode mode,
+        bool allowPreparedBeakerRecovery = false, bool twoPhaseHotBeaker = false)
     {
         if (raw.Input == null)
             return Blocked(request, request, mode, "no-beaker", "Во входном слоте нет мензурки.");
         if (!raw.Input.HasReagentList)
             return Blocked(request, request, mode, "unsupported-container", "Входная ёмкость не содержит раствор реагентов.");
         if (raw.Input.Reagents.Count != 0 || raw.Input.CurrentVolumeHundredths != 0)
+        {
+            if (allowPreparedBeakerRecovery)
+                return BuildPreparedBeakerRecovery(raw, request, mode);
             return Blocked(request, request, mode, "beaker-not-empty", "Входная мензурка не пуста.");
+        }
         if (raw.Input.MaxVolumeHundredths <= 0)
             return Blocked(request, request, mode, "invalid-capacity", "Вместимость мензурки не прочитана.");
         try
@@ -44,6 +50,7 @@ internal static class ExecutionSequencePlanner
             {
                 Request = request,
                 Mode = mode == ChemistryTargetMode.Make ? "make" : "ensure",
+                TwoPhaseHotBeaker = twoPhaseHotBeaker,
             });
             var absolute = AbsoluteGoal(result.Plan, request);
             var actions = result.Actions.Select(action => new PlannedLiveAction(
@@ -54,7 +61,14 @@ internal static class ExecutionSequencePlanner
                 ToHundredths(action.BufferAfter),
                 ToHundredths(action.BeakerAfter),
                 action.Reactions.ToList())).ToList();
-            return new ExecutionSequence(request, absolute, mode, result.Plan, result.Status, result.Detail, actions);
+            var preparedExternalPrototype = result.Detail.StartsWith("Ингредиенты для «", StringComparison.Ordinal)
+                ? result.Plan?.Steps.FirstOrDefault(step => step.RequiresExternalApparatus)?.Prototype
+                : null;
+            return new ExecutionSequence(request, absolute, mode, result.Plan, result.Status, result.Detail, actions,
+                PreparedExternalPrototype: preparedExternalPrototype,
+                RequiresColdBeaker: result.RequiresColdBeaker,
+                RequiresHotBeakerAfterActions: result.RequiresHotBeakerAfterActions,
+                HotReactionConflicts: result.HotReactionConflicts);
         }
         catch (VirtualStop stop)
         {
@@ -68,6 +82,37 @@ internal static class ExecutionSequencePlanner
 
     private static ExecutionSequence Blocked(string request, string absolute, ChemistryTargetMode mode,
         string status, string detail) => new(request, absolute, mode, null, status, detail, Array.Empty<PlannedLiveAction>());
+
+    private static ExecutionSequence BuildPreparedBeakerRecovery(ChemMasterRawSnapshot raw, string request,
+        ChemistryTargetMode mode)
+    {
+        var buffer = raw.BufferReagents.ToDictionary(row => row.ReagentId, row => row.QuantityHundredths,
+            StringComparer.Ordinal);
+        var beaker = raw.Input!.Reagents.ToDictionary(row => row.ReagentId, row => row.QuantityHundredths,
+            StringComparer.Ordinal);
+        var actions = new List<PlannedLiveAction>();
+        foreach (var row in raw.Input.Reagents)
+        {
+            var amount = beaker.GetValueOrDefault(row.ReagentId);
+            if (amount <= 0) continue;
+            beaker.Remove(row.ReagentId);
+            buffer[row.ReagentId] = checked(buffer.GetValueOrDefault(row.ReagentId) + amount);
+            actions.Add(new PlannedLiveAction(
+                row.ReagentId,
+                "all",
+                false,
+                amount,
+                new Dictionary<string, int>(buffer, StringComparer.Ordinal),
+                new Dictionary<string, int>(beaker, StringComparer.Ordinal),
+                Array.Empty<string>()));
+        }
+        if (actions.Count == 0)
+            return Blocked(request, request, mode, "beaker-recovery-empty",
+                "Повторное чтение не нашло содержимого подготовленной мензурки.");
+        return new ExecutionSequence(request, request, mode, null, "completed",
+            "Фактический продукт температурной реакции будет возвращён в буфер и перечитан.",
+            actions, ReplanAfterActions: true);
+    }
 
     private static string AbsoluteGoal(ChemistryPlanning.ChemistryPlanOutput? plan, string fallback)
     {

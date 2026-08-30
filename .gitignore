@@ -6,6 +6,7 @@
 /ChemMasterAssistant/
 /artifacts/
 *.zip
+/release/
 
 # Результаты тестов и временные проверки
 /.test-results/

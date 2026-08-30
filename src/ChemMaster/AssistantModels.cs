@@ -24,6 +24,14 @@ internal enum ChemistryTargetMode
     Make,
 }
 
+internal enum ExternalDecisionKind
+{
+    None,
+    UnexpectedState,
+    InstallColdBeaker,
+    InstallHotBeaker,
+}
+
 internal sealed record GameWindowSnapshot(
     long Handle,
     int ProcessId,
@@ -64,7 +72,12 @@ internal sealed record ExecutionSequence(
     ChemistryPlanning.ChemistryPlanOutput? Plan,
     string Status,
     string Detail,
-    IReadOnlyList<PlannedLiveAction> Actions);
+    IReadOnlyList<PlannedLiveAction> Actions,
+    bool ReplanAfterActions = false,
+    string? PreparedExternalPrototype = null,
+    bool RequiresColdBeaker = false,
+    bool RequiresHotBeakerAfterActions = false,
+    IReadOnlyList<string>? HotReactionConflicts = null);
 
 internal sealed record ExecutorProgress(
     ChemMasterExecutorState State,

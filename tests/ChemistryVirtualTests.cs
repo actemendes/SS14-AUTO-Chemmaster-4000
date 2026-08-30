@@ -367,6 +367,18 @@ internal static class ChemistryVirtualTests
             Equal(machine.Buffer.Get("AmbuzolPlus"), 500, "Амбузол плюс"); Equal(machine.Buffer.Get("Blood"), 1500, "Побочный выход крови");
             Equal(machine.Buffer.Items.Count, 2, "Оба продукта возвращены без примесей");
         });
+        Case("production", "Амбузол готовится через аммиак несмотря на штатное выделение газа", () =>
+        {
+            var machine = Raw(("Hydrogen", 3), ("Nitrogen", 1), ("Dylovene", 1), ("Blood", 2));
+            var result = Success(machine, "Ambuzol=4");
+            Equal(result.Plan!.Steps.Count, 2, "Нужны только аммиак и амбузол");
+            Equal(string.Join(",", result.Plan.Steps.Select(step => step.Prototype)), "Ammonia,Ambuzol",
+                "Неверная цепочка приготовления");
+            Equal(machine.Buffer.Get("Ambuzol"), 400, "Выход амбузола");
+            Equal(machine.Buffer.Get("Ammonia"), 300, "Остаток аммиака из целой партии");
+            Assert(result.Actions.SelectMany(action => action.Reactions).Contains("Ambuzol"),
+                "Газовая реакция амбузола не была выполнена");
+        });
         Case("production", "Побочный выход удовлетворяет вторую выбранную цель", () =>
         {
             var machine = Raw(("Ambuzol", 5), ("ZombieBlood", 15));
@@ -471,6 +483,13 @@ internal static class ChemistryVirtualTests
     private static void GuardCases()
     {
         Case("guards", "Не хватает ровно 0.01u", () => Blocked(Raw(("Inaprovaline", 5), ("Carbon", 4.99m)), "Bicaridine=10", "needs-reagents"));
+        Case("guards", "Нехватка показывает prototype и русское название", () =>
+        {
+            var result = Run(Raw(("Inaprovaline", 5), ("Carbon", 4.99m)), "Bicaridine=10");
+            Equal(result.Status, "needs-reagents", result.Detail);
+            Assert(result.Detail.Contains("Carbon (углерод)", StringComparison.Ordinal),
+                "В сообщении о нехватке нет русского названия рядом с prototype");
+        });
         Case("guards", "Нет ни одного исходника", () => Blocked(Raw(), "Bicaridine=10", "needs-reagents"));
         Case("guards", "Исчезло питание", () => { var m = Elements(); m.Powered = false; Blocked(m, "Dylovene=10", "power-off"); });
         Case("guards", "Нет мензурки", () => { var m = Elements(); m.HasBeaker = false; Blocked(m, "Dylovene=10", "no-beaker"); });

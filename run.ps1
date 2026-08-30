@@ -72,5 +72,10 @@ if ($null -eq $dotnet -or -not (Test-Path -LiteralPath $dotnet)) {
     throw 'A .NET runtime was not found. Start SS14 once so its runtime path can be remembered.'
 }
 
+# Windows PowerShell 5.1 promotes native stderr to ErrorRecord objects when
+# ErrorActionPreference is Stop. The CLI intentionally reports validation
+# errors on stderr, so preserve its real process exit code instead.
+$ErrorActionPreference = 'Continue'
 & $dotnet $binary @MonitorArguments
-exit $LASTEXITCODE
+$processExitCode = $LASTEXITCODE
+exit $processExitCode

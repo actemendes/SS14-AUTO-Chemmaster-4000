@@ -27,10 +27,20 @@ internal static class ChemMasterExecutorTests
 
         await Case("Полный рецепт: один клик на одно подтверждение и возврат", FullRecipe);
         await Case("Задержанный State не повторяет клик", DelayedState);
+        await Case("Турбо ждёт строку продукта реакции без повторного клика", TurboWaitsForReactionProductRow);
+        await Case("Температурный продукт возвращается и перепланируется в обычном и турбо-режимах",
+            HeatedProductReturnsAndReplans);
+        await Case("Большой температурный этап делится на партии 33+17 в обоих режимах",
+            HeatedProductBatchesToCapacity);
+        await Case("Опасная промежуточная пара откладывается до финального ингредиента",
+            CompetingPairIsDeferred);
+        await Case("Двухфазная автоматизация готовит Oil в холодной мензурке и продолжает Ash в горячей",
+            TwoPhaseColdThenHot);
         await Case("Нет изменения State: timeout без повторного клика", NoStateChange);
         await Case("Внешнее изменение буфера ставит на паузу и допускает abort", ExternalChangeAbort);
         await Case("Частичный перенос ставит на паузу и не разрешает replan с грязной мензуркой", PartialTransfer);
         await Case("Движение scroll подтверждается быстрыми reads и полным финальным snapshot", MovingScroll);
+        await Case("Турбо-прокрутка отправляет три последовательных шага по 120", TurboTripleScroll);
         await Case("Некорректный cached hint принудительно переключается на полный scan", InvalidFastHintForcesFullScan);
         await Case("Fast fallback-full hint всё равно требует отдельный финальный full", FastFallbackHintStillRequiresFinalFull);
         await Case("Неоднозначный полный snapshot после fast hint блокирует следующий ввод", FullAmbiguityAfterFastHint);
@@ -151,6 +161,147 @@ internal static class ChemMasterExecutorTests
         Assert(harness.World.ReadCount >= 13, "Не было реального ожидания нескольких stale snapshot");
     }
 
+    private static async Task TurboWaitsForReactionProductRow()
+    {
+        using var harness = await Harness.Create(
+            Stock(("Inaprovaline", 5), ("Carbon", 5)),
+            configureSettings: settings => settings.TurboMode = true);
+        harness.World.StaleReadsAfterClick = 3;
+
+        await harness.Executor.StartAsync("Bicaridine=10", ChemistryTargetMode.Ensure);
+
+        Equal(harness.Executor.Progress.State, ChemMasterExecutorState.Completed,
+            harness.Executor.Progress.Message);
+        Equal(harness.World.ClickCount, 3, "Каждое действие должно получить ровно один физический клик");
+        Equal(harness.World.AppliedClickCount, 3, "Все клики должны примениться ровно один раз");
+        Equal(harness.World.Machine.Buffer.Get("Bicaridine"), 1000, "Продукт реакции должен вернуться в буфер");
+        Equal(harness.World.Machine.Beaker.Volume, 0, "Мензурка должна остаться пустой после возврата");
+        Assert(harness.World.FastReadCount >= 9,
+            "Турбо-режим не дождался отложенного обновления UI быстрыми чтениями");
+    }
+
+    private static async Task HeatedProductReturnsAndReplans()
+    {
+        foreach (var turbo in new[] { false, true })
+        {
+            using var harness = await Harness.Create(
+                Stock(("Mercury", 10), ("Oxygen", 10), ("Water", 10)),
+                configureSettings: settings => settings.TurboMode = turbo,
+                configureWorldBeforeConnect: world => world.Machine.Beaker.Temperature = 400);
+
+            await harness.Executor.StartAsync("Impedrezene=10", ChemistryTargetMode.Ensure);
+
+            Equal(harness.Executor.Progress.State, ChemMasterExecutorState.Completed,
+                $"Режим turbo={turbo}: {harness.Executor.Progress.Message}");
+            Equal(harness.World.Machine.Buffer.Get("Impedrezene"), 1000,
+                $"Режим turbo={turbo}: температурный продукт не вернулся в буфер");
+            Equal(harness.World.Machine.Beaker.Volume, 0,
+                $"Режим turbo={turbo}: мензурка не опустела после температурного этапа");
+            Equal(harness.World.ClickCount, 4,
+                $"Режим turbo={turbo}: ожидались три ингредиента и один возврат без повторов");
+        }
+    }
+
+    private static async Task HeatedProductBatchesToCapacity()
+    {
+        foreach (var turbo in new[] { false, true })
+        {
+            using var harness = await Harness.Create(
+                Stock(("Mercury", 50), ("Oxygen", 50), ("Water", 50)),
+                configureSettings: settings => settings.TurboMode = turbo,
+                configureWorldBeforeConnect: world => world.Machine.Beaker.Temperature = 400);
+
+            await harness.Executor.StartAsync("Impedrezene=50", ChemistryTargetMode.Ensure);
+
+            Equal(harness.Executor.Progress.State, ChemMasterExecutorState.Completed,
+                $"Режим turbo={turbo}: {harness.Executor.Progress.Message}");
+            Equal(harness.World.Machine.Buffer.Get("Impedrezene"), 5000,
+                $"Режим turbo={turbo}: партии 33+17 не дали 50u продукта");
+            Equal(harness.World.Machine.Beaker.Volume, 0,
+                $"Режим turbo={turbo}: мензурка осталась непустой между партиями");
+            Equal(harness.World.ClickCount, 17,
+                $"Режим turbo={turbo}: неверное число кликов для партий 33+17");
+        }
+    }
+
+    private static async Task CompetingPairIsDeferred()
+    {
+        using var harness = await Harness.Create(
+            Stock(("Hydrogen", 1), ("Carbon", 1), ("WeldingFuel", 1)));
+
+        var sequence = await harness.Executor.PreviewAsync("Oil=3", ChemistryTargetMode.Ensure);
+
+        Equal(sequence.Status, "completed", sequence.Detail);
+        var ingredients = sequence.Actions.Where(action => action.FromBuffer).Take(3)
+            .Select(action => action.Prototype).ToArray();
+        Equal(string.Join(",", ingredients), "Hydrogen,WeldingFuel,Carbon",
+            "Hydrogen+Carbon не должны смешиваться до добавления третьего ингредиента Oil");
+    }
+
+    private static async Task TwoPhaseColdThenHot()
+    {
+        foreach (var turbo in new[] { false, true })
+        {
+            using var harness = await Harness.Create(
+                Stock(("Hydrogen", 1), ("Carbon", 1), ("WeldingFuel", 1)),
+                configureSettings: settings =>
+                {
+                    settings.TwoPhaseHotBeaker = true;
+                    settings.TurboMode = turbo;
+                },
+                configureWorldBeforeConnect: world => world.Machine.Beaker.Temperature = 600);
+
+            var preview = await harness.Executor.PreviewAsync("Ash=3", ChemistryTargetMode.Ensure);
+            Equal(preview.Status, "completed", preview.Detail);
+            Assert(preview.RequiresColdBeaker, $"turbo={turbo}: предпросмотр не запросил холодную фазу для Oil");
+            Assert(preview.RequiresHotBeakerAfterActions,
+                $"turbo={turbo}: предпросмотр не запланировал возврат горячей мензурки");
+            Assert(preview.HotReactionConflicts?.Any(item =>
+                    item.Contains("Oil", StringComparison.Ordinal) && item.Contains("Benzene", StringComparison.Ordinal)) == true,
+                $"turbo={turbo}: предпросмотр не объяснил конфликт Oil/Benzene");
+
+            var run = harness.Executor.StartAsync("Ash=3", ChemistryTargetMode.Ensure);
+            await WaitUntil(() => harness.Executor.IsExternalPause &&
+                harness.Executor.PendingExternalDecisionKind == ExternalDecisionKind.InstallColdBeaker,
+                $"turbo={turbo}: нет паузы для установки холодной мензурки");
+            Equal(harness.World.ClickCount, 0, $"turbo={turbo}: до подтверждения холодной мензурки произошёл клик");
+            Equal(harness.World.ActivationCallCount, 0,
+                $"turbo={turbo}: фазовая пауза ошибочно увела фокус с помощника на SS14");
+            harness.World.Machine.Beaker.Temperature = 293.15f;
+            var coldEpoch = harness.Executor.ExternalDecisionEpoch;
+            harness.Executor.AcceptExternalStateAndReplan(coldEpoch);
+
+            await WaitUntil(() => harness.Executor.IsExternalPause &&
+                harness.Executor.PendingExternalDecisionKind == ExternalDecisionKind.InstallHotBeaker &&
+                harness.Executor.ExternalDecisionEpoch > coldEpoch,
+                $"turbo={turbo}: нет паузы для возврата горячей мензурки");
+            Equal(harness.World.Machine.Buffer.Get("Oil"), 300,
+                $"turbo={turbo}: холодная фаза не вернула Oil в буфер");
+            Equal(harness.World.Machine.Buffer.Get("Benzene"), 0,
+                $"turbo={turbo}: холодная фаза неожиданно сварила Benzene");
+            Equal(harness.World.Machine.Beaker.Volume, 0,
+                $"turbo={turbo}: перед горячей фазой мензурка должна быть пустой");
+            Equal(harness.World.ActivationCallCount, 1,
+                $"turbo={turbo}: фазовая пауза перед горячей мензуркой ошибочно активировала SS14");
+
+            harness.World.Machine.Beaker.Temperature = 600;
+            harness.Executor.AcceptExternalStateAndReplan(harness.Executor.ExternalDecisionEpoch);
+            await run;
+
+            Equal(harness.Executor.Progress.State, ChemMasterExecutorState.Completed,
+                $"turbo={turbo}: {harness.Executor.Progress.Message}");
+            Equal(harness.World.Machine.Buffer.Get("Ash"), 300,
+                $"turbo={turbo}: горячая фаза не приготовила и не вернула Ash");
+            Equal(harness.World.Machine.Buffer.Get("Benzene"), 0,
+                $"turbo={turbo}: в двухфазном сценарии появился Benzene");
+            Equal(harness.World.Machine.Beaker.Volume, 0,
+                $"turbo={turbo}: после двухфазной варки мензурка не пуста");
+            var events = ReadJournal(harness.Executor.JournalPath);
+            Equal(events.Count(item => item == "beaker-phase-confirmed"), 2,
+                $"turbo={turbo}: обе смены мензурки должны быть подтверждены в журнале");
+        }
+    }
+
     private static async Task NoStateChange()
     {
         using var harness = await Harness.Create(Stock(("Inaprovaline", 5), ("Carbon", 5)));
@@ -224,6 +375,23 @@ internal static class ChemMasterExecutorTests
             hintRead.GetProperty("observedAt").GetDateTimeOffset(),
             "Full scroll control не является причинным продолжением fast hint");
         Equal(harness.World.ClickCount, 3, "Прокрутка не должна добавлять клики по реагентам");
+    }
+
+    private static async Task TurboTripleScroll()
+    {
+        var expanded = WindowsGameInput.ExpandWheelDelta(-360);
+        Assert(expanded.SequenceEqual(new[] { -120, -120, -120 }),
+            "Turbo delta не разложена на три последовательных wheel-события");
+        Throws<ArgumentOutOfRangeException>(() => WindowsGameInput.ExpandWheelDelta(-480));
+
+        using var harness = await Harness.Create(HiddenBicaridineStock(),
+            configureSettings: settings => settings.TurboMode = true);
+        await harness.Executor.StartAsync("Bicaridine=10", ChemistryTargetMode.Ensure);
+        Equal(harness.Executor.Progress.State, ChemMasterExecutorState.Completed,
+            harness.Executor.Progress.Message);
+        Assert(harness.World.WheelDeltas.Count > 0, "Турбо-сценарий не потребовал прокрутку");
+        Assert(harness.World.WheelDeltas.All(delta => Math.Abs(delta) == 360),
+            "Executor не запросил тройную прокрутку в турбо-режиме");
     }
 
     private static async Task FullAmbiguityAfterFastHint()
@@ -1202,6 +1370,7 @@ internal static class ChemMasterExecutorTests
                 PollIntervalMilliseconds = 25,
                 MaximumActions = 100,
                 ActivateGameOnStart = false,
+                TwoPhaseHotBeaker = false,
                 LogDirectory = "logs",
             };
             configureSettings?.Invoke(settings);
@@ -1340,6 +1509,7 @@ internal static class ChemMasterExecutorTests
         public int PointerMoveCount { get; private set; }
         public int ScrollCount { get; private set; }
         public int ScrollTargetChangeCount { get; private set; }
+        public List<int> WheelDeltas { get; } = new();
         public List<ClickRecord> Clicks { get; } = new();
         public ManualResetEventSlim ClickEntered { get; } = new(false);
         public ManualResetEventSlim ReleaseClick { get; } = new(false);
@@ -1359,6 +1529,7 @@ internal static class ChemMasterExecutorTests
                     ClickCount = AppliedClickCount = PointerMoveCount = ScrollCount =
                     ScrollTargetChangeCount = 0;
                 Clicks.Clear();
+                WheelDeltas.Clear();
                 _readActions.Clear();
                 _bufferScrollFrames.Clear();
                 _inputScrollFrames.Clear();
@@ -1621,6 +1792,7 @@ internal static class ChemMasterExecutorTests
                     !StringComparer.Ordinal.Equals(_hoveredScrollList, buffer ? "buffer" : "input"))
                     throw new InvalidOperationException("Fake wheel не получил подтверждённый pointer/hover списка.");
                 ScrollCount++;
+                WheelDeltas.Add(wheelDelta);
                 var requestedBuffer = buffer;
                 var actualBuffer = RouteNextScrollToOther ? !requestedBuffer : requestedBuffer;
                 QueueScroll(actualBuffer, wheelDelta);

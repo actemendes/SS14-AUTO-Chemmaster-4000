@@ -11,6 +11,7 @@ internal sealed class ChemMasterExecutor : IDisposable
     // Deliberately keep only UI/click guards in the hot execution path. The
     // complete ingredient/recipe preflight still runs before StartAsync.
     private static bool RelaxedChemistryChecks => true;
+    private bool TurboMode => _settings.TurboMode;
     private readonly IExecutorSnapshotSource _source;
     private readonly IGameInputDriver _input;
     private readonly LiveCalibrationManager _calibration;
@@ -26,6 +27,7 @@ internal sealed class ChemMasterExecutor : IDisposable
     private volatile bool _externalPause;
     private volatile bool _acceptedExternalReplan;
     private TaskCompletionSource<bool>? _externalDecision;
+    private ExternalDecisionKind _externalDecisionKind;
     private long _externalDecisionEpoch;
     private long _controlEpoch;
     private int _disposeStarted;
@@ -41,6 +43,10 @@ internal sealed class ChemMasterExecutor : IDisposable
     public bool IsRunning => _runTask is { IsCompleted: false };
     public bool IsExternalPause => _externalPause;
     public long ExternalDecisionEpoch { get { lock (_externalDecisionGate) return _externalDecisionEpoch; } }
+    public ExternalDecisionKind PendingExternalDecisionKind
+    {
+        get { lock (_externalDecisionGate) return _externalDecisionKind; }
+    }
     public string JournalPath => _journal.Path;
 
     public ChemMasterExecutor(IExecutorSnapshotSource source, IGameInputDriver input,
@@ -99,7 +105,8 @@ internal sealed class ChemMasterExecutor : IDisposable
         if (IsRunning) throw new InvalidOperationException("Предпросмотр недоступен во время выполнения.");
         var snapshot = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
         LastSnapshot = snapshot;
-        var sequence = ExecutionSequencePlanner.Build(snapshot, request, mode);
+        var sequence = ExecutionSequencePlanner.Build(snapshot, request, mode,
+            twoPhaseHotBeaker: _settings.TwoPhaseHotBeaker);
         LastSequence = sequence;
         _journal.Write("plan-preview", Progress.State, new
         {
@@ -126,7 +133,11 @@ internal sealed class ChemMasterExecutor : IDisposable
                 _cancelRequested = false;
                 _externalPause = false;
                 _acceptedExternalReplan = false;
-                lock (_externalDecisionGate) _externalDecision = null;
+                lock (_externalDecisionGate)
+                {
+                    _externalDecision = null;
+                    _externalDecisionKind = ExternalDecisionKind.None;
+                }
                 Interlocked.Increment(ref _controlEpoch);
                 _runCancellation = new CancellationTokenSource();
                 _runTask = RunCoreAsync(request, mode, _runCancellation.Token);
@@ -172,28 +183,30 @@ internal sealed class ChemMasterExecutor : IDisposable
 
     public void AcceptExternalStateAndReplan()
     {
-        TaskCompletionSource<bool> decision;
         long epoch;
         lock (_externalDecisionGate)
         {
             if (!_externalPause || _externalDecision == null)
                 throw new InvalidOperationException("Нет ожидающего решения по внешнему изменению.");
-            decision = _externalDecision;
             epoch = _externalDecisionEpoch;
         }
-        if (!decision.TrySetResult(true))
-            throw new InvalidOperationException($"Решение epoch {epoch} уже было принято; дождитесь следующего подтверждения State.");
+        AcceptExternalStateAndReplan(epoch);
     }
 
     public void AcceptExternalStateAndReplan(long expectedEpoch)
     {
         TaskCompletionSource<bool> decision;
+        ExternalDecisionKind kind;
         lock (_externalDecisionGate)
         {
             if (!_externalPause || _externalDecision == null || _externalDecisionEpoch != expectedEpoch)
                 throw new InvalidOperationException("External decision устарел или больше не ожидается.");
             decision = _externalDecision;
+            kind = _externalDecisionKind;
         }
+        if ((kind is ExternalDecisionKind.InstallColdBeaker or ExternalDecisionKind.InstallHotBeaker) &&
+            !_input.TryActivate())
+            throw new InvalidOperationException("Не удалось активировать окно SS14; подтверждение смены мензурки не принято.");
         if (!decision.TrySetResult(true))
             throw new InvalidOperationException("External decision уже был принят.");
     }
@@ -287,6 +300,8 @@ internal sealed class ChemMasterExecutor : IDisposable
             var confirmed = SnapshotInventory.From(current);
             runInitial = confirmed;
             var firstPlan = true;
+            var allowPreparedBeakerRecovery = false;
+            var beakerPhase = _settings.TwoPhaseHotBeaker ? BeakerPhase.Hot : BeakerPhase.Unspecified;
 
             while (true)
             {
@@ -298,7 +313,9 @@ internal sealed class ChemMasterExecutor : IDisposable
                     confirmed = SnapshotInventory.From(current);
                 }
                 var sequence = ExecutionSequencePlanner.Build(current, firstPlan ? request : absoluteGoal,
-                    firstPlan ? initialMode : ChemistryTargetMode.Ensure);
+                    firstPlan ? initialMode : ChemistryTargetMode.Ensure, allowPreparedBeakerRecovery,
+                    _settings.TwoPhaseHotBeaker);
+                allowPreparedBeakerRecovery = false;
                 LastSequence = sequence;
                 if (firstPlan) absoluteGoal = sequence.AbsoluteGoalRequest;
                 firstPlan = false;
@@ -310,10 +327,23 @@ internal sealed class ChemMasterExecutor : IDisposable
                     sequence.Status,
                     sequence.Detail,
                     actionCount = sequence.Actions.Count,
+                    sequence.ReplanAfterActions,
+                    sequence.PreparedExternalPrototype,
+                    sequence.RequiresColdBeaker,
+                    sequence.RequiresHotBeakerAfterActions,
+                    sequence.HotReactionConflicts,
                     sequence.Plan,
                 });
                 if (sequence.Status != "completed")
                     throw new ExecutorFailure(sequence.Status + ": " + sequence.Detail);
+                if (sequence.RequiresColdBeaker && beakerPhase != BeakerPhase.Cold)
+                {
+                    current = await WaitForBeakerPhaseAsync(current, ExternalDecisionKind.InstallColdBeaker,
+                        sequence.HotReactionConflicts ?? Array.Empty<string>(), cancellationToken).ConfigureAwait(false);
+                    confirmed = SnapshotInventory.From(current);
+                    beakerPhase = BeakerPhase.Cold;
+                    continue;
+                }
                 if (sequence.Actions.Count == 0)
                 {
                     LastSummary = BuildSummary(request, initialMode, "completed", runInitial.Buffer,
@@ -416,14 +446,17 @@ internal sealed class ChemMasterExecutor : IDisposable
                                 current = final;
                                 continue;
                             }
-                            var pointerTarget = CaptureClickTarget(final, action);
-                            if (!SameClickTarget(finalTarget, pointerTarget) ||
-                                !PointerMatchesClick(final, action, pointerTarget))
+                            if (!TurboMode)
                             {
-                                current = final;
-                                continue;
+                                var pointerTarget = CaptureClickTarget(final, action);
+                                if (!SameClickTarget(finalTarget, pointerTarget) ||
+                                    !PointerMatchesClick(final, action, pointerTarget))
+                                {
+                                    current = final;
+                                    continue;
+                                }
+                                finalTarget = pointerTarget;
                             }
-                            finalTarget = pointerTarget;
                         }
                         ValidateSnapshotFreshness(final);
                         prepared = new PreparedClick(final, finalTarget.RowIndex, finalTarget.Button,
@@ -533,12 +566,21 @@ internal sealed class ChemMasterExecutor : IDisposable
                     ExecutorSnapshot after;
                     if (RelaxedChemistryChecks)
                     {
-                        // One fast read keeps the UI geometry current for the next
-                        // click; no chemistry delta polling/reaction replay here.
-                        await Task.Delay(20, cancellationToken).ConfigureAwait(false);
+                        // Usually the first fast read already sees the click. If the
+                        // game has not published the reaction yet, keep reading without
+                        // ever repeating the committed input. The next action may refer
+                        // to a product row which does not exist until that reaction is
+                        // visible in the UI (for example Blood -> Ambuzol).
+                        if (!TurboMode)
+                            await Task.Delay(20, cancellationToken).ConfigureAwait(false);
                         after = await ReadFastFreshAsync(cancellationToken).ConfigureAwait(false);
                         ValidateReadySnapshot(after, requireEmptyBeaker: false, requireCalibration: true,
                             enforceTransferMode: false, requireCompleteCandidateSet: false);
+                        var nextAction = index + 1 < sequence.Actions.Count
+                            ? sequence.Actions[index + 1]
+                            : null;
+                        after = await WaitForRelaxedPostClickStateAsync(after, actualBefore, nextAction,
+                            cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
@@ -619,6 +661,49 @@ internal sealed class ChemMasterExecutor : IDisposable
                         unitContinuation = PrepareUnitContinuation(current, action, sequence.Actions[index + 1]);
                 }
 
+                if (sequence.RequiresHotBeakerAfterActions)
+                {
+                    current = await WaitForBeakerPhaseAsync(current, ExternalDecisionKind.InstallHotBeaker,
+                        sequence.HotReactionConflicts ?? Array.Empty<string>(), cancellationToken).ConfigureAwait(false);
+                    confirmed = SnapshotInventory.From(current);
+                    beakerPhase = BeakerPhase.Hot;
+                    continue;
+                }
+
+                if (sequence.ReplanAfterActions)
+                {
+                    current = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
+                    ValidateReadySnapshot(current, requireEmptyBeaker: true, requireCalibration: true);
+                    confirmed = SnapshotInventory.From(current);
+                    _journal.Write("prepared-beaker-returned", ChemMasterExecutorState.Executing, new
+                    {
+                        absoluteGoal,
+                        actualBuffer = confirmed.Buffer,
+                        snapshot = current.State,
+                    });
+                    continue;
+                }
+
+                if (!replan && sequence.PreparedExternalPrototype is { } preparedPrototype)
+                {
+                    current = await WaitForPreparedProductAsync(current, preparedPrototype, cancellationToken)
+                        .ConfigureAwait(false);
+                    confirmed = SnapshotInventory.From(current);
+                    allowPreparedBeakerRecovery = confirmed.Beaker.Count != 0;
+                    _journal.Write("prepared-product-observed", ChemMasterExecutorState.Executing, new
+                    {
+                        prototype = preparedPrototype,
+                        returnRequired = allowPreparedBeakerRecovery,
+                        actualBuffer = confirmed.Buffer,
+                        actualBeaker = confirmed.Beaker,
+                        snapshot = current.State,
+                    });
+                    continue;
+                }
+
+                if (replan)
+                    continue;
+
                 if (RelaxedChemistryChecks)
                 {
                     LastSummary = BuildSummary(request, initialMode, "completed", runInitial!.Buffer,
@@ -678,6 +763,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                 _externalPause = false;
                 _acceptedExternalReplan = false;
                 _externalDecision = null;
+                _externalDecisionKind = ExternalDecisionKind.None;
             }
         }
     }
@@ -737,7 +823,8 @@ internal sealed class ChemMasterExecutor : IDisposable
                 {
                     try
                     {
-                        _input.Scroll(prepared.Snapshot.Window, prepared.Panel, prepared.X, prepared.Y, prepared.Direction);
+                        var wheelDelta = TurboMode ? checked(prepared.Direction * 3) : prepared.Direction;
+                        _input.Scroll(prepared.Snapshot.Window, prepared.Panel, prepared.X, prepared.Y, wheelDelta);
                         scrolled = true;
                     }
                     catch (IndeterminateGameInputException ex)
@@ -783,6 +870,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                 action.Prototype,
                 prepared.List,
                 prepared.Direction,
+                wheelSteps = TurboMode ? 3 : 1,
                 point = new { clientX = prepared.X, clientY = prepared.Y },
             }), ref scrollTelemetryFault);
             snapshot = await WaitForScrollMovementAsync(prepared.Snapshot, expected, action,
@@ -825,7 +913,7 @@ internal sealed class ChemMasterExecutor : IDisposable
             if (!final.Window.Active) return new ScrollPreparation(final, false, null);
             var currentTarget = CaptureScrollTarget(final, action);
             if (currentTarget == null) return new ScrollPreparation(final, true, null);
-            if (!SameScrollTarget(target, currentTarget) || !PointerMatchesScroll(final, currentTarget))
+            if (!SameScrollTarget(target, currentTarget) || !TurboMode && !PointerMatchesScroll(final, currentTarget))
                 return new ScrollPreparation(final, false, null);
             target = currentTarget;
         }
@@ -902,6 +990,7 @@ internal sealed class ChemMasterExecutor : IDisposable
             target.List,
             point = new { clientX = target.X, clientY = target.Y },
         });
+        if (TurboMode) return snapshot;
 
         var watch = Stopwatch.StartNew();
         var lastProof = snapshot;
@@ -995,9 +1084,9 @@ internal sealed class ChemMasterExecutor : IDisposable
         if (direction != prepared.Direction) return false;
         var point = _calibration.ResolveScrollPoint(snapshot, prepared.List);
         return point.X == prepared.X && point.Y == prepared.Y &&
-            prepared.PanelRect.Equals(RectFingerprint.From(point.Panel)) && PointerMatchesScroll(snapshot,
+            prepared.PanelRect.Equals(RectFingerprint.From(point.Panel)) && (TurboMode || PointerMatchesScroll(snapshot,
                 new ScrollTarget(prepared.List, prepared.Direction, prepared.X, prepared.Y, prepared.Panel,
-                    prepared.PanelRect, prepared.Viewport, prepared.ScrollBar));
+                    prepared.PanelRect, prepared.Viewport, prepared.ScrollBar)));
     }
 
     private async Task<ExecutorSnapshot> ReconcileIndeterminateScrollAsync(PlannedLiveAction action)
@@ -1192,7 +1281,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                 return current;
             }
         }
-        throw new ExecutorFailure("После одного шага колеса Value/ValueTarget не дали стабильного подтверждения.");
+        throw new ExecutorFailure("После прокрутки Value/ValueTarget не дали стабильного подтверждения.");
     }
 
     private static bool SameNonTargetScroll(ChemMasterScrollState before, ChemMasterScrollState after) =>
@@ -1260,6 +1349,72 @@ internal sealed class ChemMasterExecutor : IDisposable
         throw new ExecutorFailure("После клика не появился подтверждённый новый State; повторный клик запрещён.");
     }
 
+    private async Task<ExecutorSnapshot> WaitForRelaxedPostClickStateAsync(ExecutorSnapshot snapshot,
+        SnapshotInventory before, PlannedLiveAction? nextAction, CancellationToken cancellationToken)
+    {
+        var watch = Stopwatch.StartNew();
+        var lastProof = snapshot;
+        var chemistryChanged = !SnapshotInventory.From(snapshot).SameChemicalState(before);
+        if (chemistryChanged && NextActionUiReady(snapshot, nextAction)) return snapshot;
+
+        while (watch.ElapsedMilliseconds < _settings.StateChangeTimeoutMilliseconds)
+        {
+            // The click has already been committed. Polling may observe it, but must
+            // never cause it to be sent for a second time.
+            await Task.Delay(_settings.PollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
+            var current = await ReadFastFreshAsync(cancellationToken).ConfigureAwait(false);
+            ValidateCausalSnapshot(lastProof, current, "ожидания реакции после клика");
+            lastProof = current;
+            if (IsTransientInvalid(current)) continue;
+            ValidateReadySnapshot(current, requireEmptyBeaker: false, requireCalibration: true,
+                enforceTransferMode: false, requireCompleteCandidateSet: false);
+            chemistryChanged = !SnapshotInventory.From(current).SameChemicalState(before);
+            if (chemistryChanged && NextActionUiReady(current, nextAction)) return current;
+        }
+
+        if (!chemistryChanged)
+            throw new ExecutorFailure("После клика не появился новый химический State; повторный клик запрещён.");
+
+        var source = nextAction!.FromBuffer ? "буфере" : "входной ёмкости";
+        throw new ExecutorFailure($"После реакции строка {nextAction.Prototype} не появилась в {source}; " +
+            "повторный клик запрещён.");
+    }
+
+    private async Task<ExecutorSnapshot> WaitForPreparedProductAsync(ExecutorSnapshot snapshot,
+        string prototype, CancellationToken cancellationToken)
+    {
+        if (SnapshotInventory.From(snapshot).Beaker.ContainsKey(prototype)) return snapshot;
+
+        SetProgress(ChemMasterExecutorState.WaitingForStateChange,
+            $"Ингредиенты собраны; ожидается температурная реакция {prototype} в горячей мензурке.",
+            snapshot: snapshot);
+        var watch = Stopwatch.StartNew();
+        var lastProof = snapshot;
+        while (watch.ElapsedMilliseconds < _settings.StateChangeTimeoutMilliseconds)
+        {
+            await Task.Delay(_settings.PollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
+            var current = await ReadFastFreshAsync(cancellationToken).ConfigureAwait(false);
+            ValidateCausalSnapshot(lastProof, current, "ожидания температурной реакции");
+            lastProof = current;
+            if (IsTransientInvalid(current)) continue;
+            ValidateReadySnapshot(current, requireEmptyBeaker: false, requireCalibration: true,
+                enforceTransferMode: false, requireCompleteCandidateSet: false);
+            if (SnapshotInventory.From(current).Beaker.ContainsKey(prototype)) return current;
+        }
+        throw new ExecutorFailure($"Горячая мензурка не подтвердила появление {prototype}. " +
+            "Фактический состав оставлен во входной ёмкости; дополнительных кликов не было.");
+    }
+
+    private static bool NextActionUiReady(ExecutorSnapshot snapshot, PlannedLiveAction? action)
+    {
+        if (action == null) return true;
+        var ui = snapshot.State.Ui;
+        if (ui == null) return false;
+        var rows = action.FromBuffer ? ui.BufferRows : ui.InputRows;
+        var matches = rows.Where(row => StringComparer.Ordinal.Equals(row.Prototype, action.Prototype)).ToList();
+        return matches.Count == 1 && matches[0].DoseButtons.ContainsKey(action.Dose);
+    }
+
     private async Task<ExecutorSnapshot> ResolveExternalChangeAsync(SnapshotInventory before,
         ExecutorSnapshot changed, PlannedLiveAction? action, CancellationToken cancellationToken)
     {
@@ -1274,6 +1429,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                 _externalPause = true;
                 decision = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 _externalDecision = decision;
+                _externalDecisionKind = ExternalDecisionKind.UnexpectedState;
                 decisionEpoch = ++_externalDecisionEpoch;
             }
             var actual = SnapshotInventory.From(changed);
@@ -1292,7 +1448,11 @@ internal sealed class ChemMasterExecutor : IDisposable
             var accept = await decision.Task.ConfigureAwait(false);
             lock (_externalDecisionGate)
             {
-                if (ReferenceEquals(_externalDecision, decision)) _externalDecision = null;
+                if (ReferenceEquals(_externalDecision, decision))
+                {
+                    _externalDecision = null;
+                    _externalDecisionKind = ExternalDecisionKind.None;
+                }
             }
             if (!accept) throw new OperationCanceledException("Пользователь отменил выполнение после внешнего изменения.", cancellationToken);
 
@@ -1322,8 +1482,93 @@ internal sealed class ChemMasterExecutor : IDisposable
                 _externalPause = false;
                 _acceptedExternalReplan = true;
                 _externalDecision = null;
+                _externalDecisionKind = ExternalDecisionKind.None;
             }
             _journal.Write("external-change-accepted", ChemMasterExecutorState.Paused, new { snapshot = second.State });
+            return second;
+        }
+    }
+
+    private async Task<ExecutorSnapshot> WaitForBeakerPhaseAsync(ExecutorSnapshot snapshot,
+        ExternalDecisionKind kind, IReadOnlyList<string> conflicts, CancellationToken cancellationToken)
+    {
+        if (kind is not (ExternalDecisionKind.InstallColdBeaker or ExternalDecisionKind.InstallHotBeaker))
+            throw new ArgumentOutOfRangeException(nameof(kind));
+
+        var cold = kind == ExternalDecisionKind.InstallColdBeaker;
+        var phaseName = cold ? "холодную" : "горячую";
+        var explanation = cold && conflicts.Count != 0
+            ? " Конфликты: " + string.Join("; ", conflicts) + "."
+            : "";
+        while (true)
+        {
+            TaskCompletionSource<bool> decision;
+            long decisionEpoch;
+            lock (_externalDecisionGate)
+            {
+                _externalPause = true;
+                decision = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _externalDecision = decision;
+                _externalDecisionKind = kind;
+                decisionEpoch = ++_externalDecisionEpoch;
+            }
+            SetProgress(ChemMasterExecutorState.Paused,
+                $"Двухфазная варка: установите пустую {phaseName} мензурку в ChemMaster и нажмите кнопку подтверждения.{explanation}",
+                snapshot: snapshot);
+            _journal.Write("beaker-phase-paused", ChemMasterExecutorState.Paused, new
+            {
+                kind = kind.ToString(),
+                conflicts,
+                decisionEpoch,
+                snapshot = snapshot.State,
+            });
+
+            using var registration = cancellationToken.Register(() => decision.TrySetCanceled(cancellationToken));
+            var accept = await decision.Task.ConfigureAwait(false);
+            lock (_externalDecisionGate)
+            {
+                if (ReferenceEquals(_externalDecision, decision))
+                {
+                    _externalDecision = null;
+                    _externalDecisionKind = ExternalDecisionKind.None;
+                }
+            }
+            if (!accept)
+                throw new OperationCanceledException("Пользователь отменил двухфазную варку.", cancellationToken);
+
+            var first = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
+            ValidateCausalSnapshot(snapshot, first, "подтверждения смены мензурки");
+            ValidateReadySnapshot(first, requireEmptyBeaker: false, requireCalibration: true);
+            await Task.Delay(_settings.PollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
+            var second = await ReadFreshAsync(cancellationToken).ConfigureAwait(false);
+            ValidateCausalSnapshot(first, second, "повторного подтверждения смены мензурки");
+            ValidateReadySnapshot(second, requireEmptyBeaker: false, requireCalibration: true);
+            var firstState = SnapshotInventory.From(first);
+            var secondState = SnapshotInventory.From(second);
+            snapshot = second;
+            if (!firstState.SameChemicalState(secondState))
+                continue;
+            if (secondState.Beaker.Count != 0)
+            {
+                SetProgress(ChemMasterExecutorState.Paused,
+                    $"Для {phaseName} фазы нужна пустая мензурка. Освободите её и подтвердите ещё раз.",
+                    snapshot: second, actual: secondState.Beaker);
+                continue;
+            }
+
+            lock (_externalDecisionGate)
+            {
+                _externalPause = false;
+                _externalDecision = null;
+                _externalDecisionKind = ExternalDecisionKind.None;
+            }
+            _journal.Write("beaker-phase-confirmed", ChemMasterExecutorState.Paused, new
+            {
+                kind = kind.ToString(),
+                beaker = secondState.BeakerDisplayName,
+                capacityHundredths = secondState.BeakerCapacityHundredths,
+                snapshot = second.State,
+            });
             return second;
         }
     }
@@ -1408,6 +1653,7 @@ internal sealed class ChemMasterExecutor : IDisposable
             action.FromBuffer,
             point = new { clientX = target.X, clientY = target.Y },
         });
+        if (TurboMode) return snapshot;
 
         var watch = Stopwatch.StartNew();
         var lastProof = snapshot;
@@ -1506,13 +1752,13 @@ internal sealed class ChemMasterExecutor : IDisposable
             !StringComparer.Ordinal.Equals(completed.Dose, next.Dose) ||
             !StringComparer.Ordinal.Equals(completed.Prototype, next.Prototype) ||
             completed.FromBuffer != next.FromBuffer || !snapshot.Window.Active ||
-            !snapshot.Observation.CandidateSetComplete)
+            !snapshot.Observation.CandidateSetComplete && !TurboMode)
             return null;
         try
         {
             ValidateSnapshotFreshness(snapshot);
             var target = CaptureClickTarget(snapshot, next);
-            if (!PointerMatchesClick(snapshot, next, target)) return null;
+            if (!TurboMode && !PointerMatchesClick(snapshot, next, target)) return null;
             var prepared = new PreparedClick(snapshot, target.RowIndex, target.Button,
                 target.X, target.Y, target.Panel, Interlocked.Read(ref _controlEpoch));
             return new PreparedUnitContinuation(next.Prototype, next.Dose, next.FromBuffer, prepared);
@@ -1541,7 +1787,7 @@ internal sealed class ChemMasterExecutor : IDisposable
         var preparedTarget = new ClickTarget(prepared.RowIndex, prepared.Button, prepared.X, prepared.Y, prepared.Panel);
         if (!SameClickTarget(current, preparedTarget))
             throw new ExecutorFailure("Строка или точка ввода изменилась непосредственно перед кликом.");
-        if (!PointerMatchesClick(snapshot, action, preparedTarget))
+        if (!TurboMode && !PointerMatchesClick(snapshot, action, preparedTarget))
             throw new ExecutorFailure("LastMousePos/hover точной кнопки изменились непосредственно перед кликом.");
     }
 
@@ -1926,6 +2172,12 @@ internal sealed class ChemMasterExecutor : IDisposable
         ChemMasterUiRect Panel, RectFingerprint PanelRect, RectFingerprint Viewport, RectFingerprint ScrollBar,
         ScrollFingerprint Scroll, ScrollFingerprint OtherScroll, long ControlEpoch);
     private sealed record ScrollPreparation(ExecutorSnapshot Snapshot, bool RowVisible, PreparedScroll? Prepared);
+    private enum BeakerPhase
+    {
+        Unspecified,
+        Cold,
+        Hot,
+    }
     private sealed record ReactionReconciliation(bool Deterministic, IReadOnlyList<string> ActualReactions,
         bool Match, string Detail)
     {

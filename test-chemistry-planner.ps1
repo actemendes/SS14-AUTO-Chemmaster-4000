@@ -38,6 +38,11 @@ $wikiCategories = @($list.categories | Where-Object id -like 'wiki-*')
 Assert-True ($wikiCategories.Count -eq 8) 'Expected the eight Wiki categories in planner output.'
 Assert-True (($wikiCategories | Where-Object id -eq 'wiki-narcotics').medicines.Count -eq 13) 'Expected 13 narcotics recipes.'
 
+$ambuzol = Get-Plan 'Ambuzol=4'
+Assert-True (($ambuzol.steps | ForEach-Object prototype) -join ',' -eq 'Dylovene,Ammonia,Ambuzol') 'Ambuzol must use the ChemMaster chain without synthesizing Blood through AmbuzolPlus.'
+Assert-True (($ambuzol.baseRequirements | Where-Object prototype -eq 'Blood').amount -eq 2) 'Ambuzol must require ready Blood.'
+Assert-True (-not @($ambuzol.steps | Where-Object prototype -eq 'Blood')) 'Blood must not become a cyclic AmbuzolPlus preparation step.'
+
 $plan = Get-Plan 'Epinephrine=20;Tricordrazine=10'
 Assert-True ($plan.requested.Count -eq 2) 'Expected two requested medicines.'
 Assert-True (-not @($plan.steps | Where-Object operation -ne 'mix')) 'Non-mixing operations must remain external requirements.'

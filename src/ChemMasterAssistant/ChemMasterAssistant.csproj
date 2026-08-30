@@ -3,6 +3,7 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>..\Shared\chemmaster.ico</ApplicationIcon>
     <AssemblyName>ChemMasterAssistant</AssemblyName>
     <RootNamespace>Ss14.ChemMasterAssistant</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -21,6 +22,12 @@
 
   <!-- Local files in this directory are included by the SDK automatically. -->
   <ItemGroup>
+    <EmbeddedResource Include="..\Shared\Cat.png" Link="Assets\Cat.png" LogicalName="ChemMasterAssistant.Cat.png" />
+    <EmbeddedResource Include="..\Shared\chemmaster.ico" Link="Assets\chemmaster.ico" LogicalName="ChemMasterAssistant.chemmaster.ico" />
+    <Content Include="..\Shared\error.mp3"
+             Link="Assets\error.mp3"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
     <Compile Include="..\Shared\ChemCalibration.cs" Link="Production\ChemCalibration.cs" />
     <Compile Include="..\ChemMaster\ActionJournal.cs" Link="Production\ActionJournal.cs" />
     <Compile Include="..\ChemMaster\AssistantModels.cs" Link="Production\AssistantModels.cs" />

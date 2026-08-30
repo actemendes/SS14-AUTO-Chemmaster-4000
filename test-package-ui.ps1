@@ -48,7 +48,13 @@ function Assert-X64Pe {
 
 function Get-RelativePackagePath {
     param([Parameter(Mandatory)] [string] $Path)
-    return [IO.Path]::GetRelativePath($packageRoot, $Path)
+    $fullRoot = [IO.Path]::GetFullPath($packageRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) +
+        [IO.Path]::DirectorySeparatorChar
+    $fullPath = [IO.Path]::GetFullPath($Path)
+    if (-not $fullPath.StartsWith($fullRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Package path escapes the staging root: $fullPath"
+    }
+    return $fullPath.Substring($fullRoot.Length)
 }
 
 if (-not (Test-Path -LiteralPath $projectPath -PathType Leaf)) {
@@ -92,6 +98,7 @@ $requiredFiles = @(
     'hostpolicy.dll',
     'System.Private.CoreLib.dll',
     'System.Windows.Forms.dll',
+    'Assets\error.mp3',
     'chemistry-recipes.json',
     'chemistry-game-rules.json',
     'chemistry-selections.json',
@@ -108,6 +115,7 @@ $sourceMappings = @(
     [pscustomobject] @{ Source = (Join-Path $projectRoot 'src\ChemMaster\chemistry-recipes.json'); Package = 'chemistry-recipes.json' },
     [pscustomobject] @{ Source = (Join-Path $projectRoot 'src\ChemMaster\chemistry-game-rules.json'); Package = 'chemistry-game-rules.json' },
     [pscustomobject] @{ Source = (Join-Path $projectRoot 'src\ChemMaster\chemistry-selections.json'); Package = 'chemistry-selections.json' },
+    [pscustomobject] @{ Source = (Join-Path $projectRoot 'src\Shared\error.mp3'); Package = 'Assets\error.mp3' },
     [pscustomobject] @{ Source = (Join-Path $projectRoot 'package\settings.json'); Package = 'settings.json' },
     [pscustomobject] @{ Source = (Join-Path $projectRoot 'package\chemmaster-calibration.json'); Package = 'chemmaster-calibration.json' },
     [pscustomobject] @{ Source = (Join-Path $projectRoot 'package\README.md'); Package = 'README.md' },
@@ -131,6 +139,8 @@ $expectedSettingNames = @(
     'maximumActions',
     'expectedTransferMode',
     'activateGameOnStart',
+    'turboMode',
+    'twoPhaseHotBeaker',
     'emergencyHotkey',
     'logDirectory'
 ) | Sort-Object
@@ -146,6 +156,8 @@ Assert-Condition ($settings.pollIntervalMilliseconds -gt 0 -and $settings.pollIn
 Assert-Condition ($settings.maximumActions -eq 10000) 'maximumActions must retain the reviewed safety ceiling of 10000.'
 Assert-Condition ($settings.expectedTransferMode -eq 0) 'Only the reviewed expectedTransferMode 0 may ship.'
 Assert-Condition ($settings.activateGameOnStart -eq $true) 'The app must activate the verified game window on explicit start.'
+Assert-Condition ($settings.turboMode -eq $false) 'The release must start with turbo mode disabled.'
+Assert-Condition ($settings.twoPhaseHotBeaker -eq $true) 'The release must protect hot-beaker recipes with two-phase automation by default.'
 Assert-Condition ($settings.emergencyHotkey -ceq 'F12') 'The release emergency hotkey must be exactly F12.'
 Assert-Condition ($settings.logDirectory -ceq 'logs') 'The release log directory must be the relative path logs.'
 
@@ -197,7 +209,7 @@ try {
     $uiStateOutput = [Convert]::ToString((Get-Content -Raw -LiteralPath $uiStateOutputPath)).Trim()
     $uiStateError = [Convert]::ToString((Get-Content -Raw -LiteralPath $uiStateErrorPath)).Trim()
     Assert-Condition ($uiStateProcess.ExitCode -eq 0) "Packaged UI-state regression exited with $($uiStateProcess.ExitCode): $uiStateError"
-    Assert-Condition ($uiStateOutput -match '^UI STATE OK: checkbox\+amount\+mode invalidation and category/search filtering OK$') 'Packaged UI-state regression did not report the expected lifecycle and filtering checks.'
+    Assert-Condition ($uiStateOutput -match '^UI STATE OK: checkbox\+amount\+mode invalidation, category/search filtering and two-phase focus routing OK$') 'Packaged UI-state regression did not report the expected lifecycle, filtering and two-phase focus checks.'
     Assert-Condition ([string]::IsNullOrWhiteSpace($uiStateError)) "Packaged UI-state regression wrote stderr: $uiStateError"
 }
 finally {
@@ -238,7 +250,8 @@ $unexpectedFiles = @($packageFiles | Where-Object {
     $isRuntimeBinary = $_.Extension -ieq '.dll' -or $_.Extension -ieq '.exe'
     $isAllowedJson = $_.Name -in $allowedJson -and $_.DirectoryName -ieq $packageRoot
     $isAllowedMarkdown = $_.Name -in $allowedMarkdown -and $_.DirectoryName -ieq $packageRoot
-    -not ($isRuntimeBinary -or $isAllowedJson -or $isAllowedMarkdown)
+    $isAllowedAudio = (Get-RelativePackagePath -Path $_.FullName) -ieq 'Assets\error.mp3'
+    -not ($isRuntimeBinary -or $isAllowedJson -or $isAllowedMarkdown -or $isAllowedAudio)
 })
 Assert-Condition ($unexpectedFiles.Count -eq 0) ('Unexpected package contents: ' + (($unexpectedFiles | ForEach-Object { Get-RelativePackagePath -Path $_.FullName }) -join ', '))
 

@@ -95,6 +95,13 @@ internal static class WindowsGameWindow
         [DllImport("user32.dll")] internal static extern uint GetDpiForWindow(IntPtr handle);
         [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool SetForegroundWindow(IntPtr handle);
+        [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool BringWindowToTop(IntPtr handle);
+        [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool ShowWindowAsync(IntPtr handle, int command);
+        [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool AttachThreadInput(uint attach, uint attachTo, bool value);
+        [DllImport("kernel32.dll")] internal static extern uint GetCurrentThreadId();
         [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool SetCursorPos(int x, int y);
         [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
@@ -212,17 +219,47 @@ internal sealed class WindowsGameInput : IGameInputDriver
 
     public void Scroll(GameWindowSnapshot expectedWindow, ChemMasterUiRect panel, int clientX, int clientY, int wheelDelta)
     {
-        if (wheelDelta != 120 && wheelDelta != -120)
-            throw new ArgumentOutOfRangeException(nameof(wheelDelta), "Разрешён ровно один шаг колеса.");
+        var wheelSteps = ExpandWheelDelta(wheelDelta);
         lock (_commitSync)
         {
             VerifyPointerAtTarget(expectedWindow, panel, clientX, clientY,
                 "Курсор не находится на заранее подтверждённой полосе прокрутки ChemMaster.");
-            SendCommitted(new[]
+            uint confirmedSteps = 0;
+            for (var index = 0; index < wheelSteps.Length; index++)
             {
-                Mouse(MouseWheel, unchecked((uint)wheelDelta)),
-            }, releaseLeftButtonOnFailure: false);
+                try
+                {
+                    SendCommitted(new[] { Mouse(MouseWheel, unchecked((uint)wheelSteps[index])) },
+                        releaseLeftButtonOnFailure: false);
+                    confirmedSteps++;
+                }
+                catch (IndeterminateGameInputException ex) when (wheelSteps.Length > 1)
+                {
+                    // Earlier wheel steps in this turbo operation are already
+                    // committed. Preserve their count so reconciliation never
+                    // retries a partially delivered three-step scroll.
+                    throw new IndeterminateGameInputException(ex.NativeErrorCode,
+                        confirmedSteps + ex.SentCount, wheelSteps.Length,
+                        mouseReleaseRequired: false, mouseReleaseConfirmed: true);
+                }
+                // Robust UI updates its animated ValueTarget on the UI thread. Let
+                // one frame process each detent; an instantaneous SendInput batch
+                // can otherwise collapse without changing Value/ValueTarget.
+                if (index + 1 < wheelSteps.Length) Thread.Sleep(16);
+            }
         }
+    }
+
+    internal static int[] ExpandWheelDelta(int wheelDelta)
+    {
+        const int unit = 120;
+        const int maximumSteps = 3;
+        if (wheelDelta == 0 || wheelDelta % unit != 0 || Math.Abs((long)wheelDelta) > unit * maximumSteps)
+            throw new ArgumentOutOfRangeException(nameof(wheelDelta),
+                "Разрешено от одного до трёх шагов колеса по 120 единиц.");
+        var steps = new int[Math.Abs(wheelDelta / unit)];
+        Array.Fill(steps, Math.Sign(wheelDelta) * unit);
+        return steps;
     }
 
     private PreparedTarget VerifyPointerAtTarget(GameWindowSnapshot expected, ChemMasterUiRect panel,

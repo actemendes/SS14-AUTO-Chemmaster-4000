@@ -112,6 +112,12 @@ internal static class ChemistryPlanning
     internal static Dictionary<string, string> ChemicalNames() => LoadData().Catalog.Chemicals
         .ToDictionary(x => x.Prototype, x => x.DisplayName, StringComparer.Ordinal);
 
+    internal static string BilingualChemicalName(string prototype, string displayName) =>
+        string.IsNullOrWhiteSpace(displayName) ||
+        displayName.Equals(prototype, StringComparison.CurrentCultureIgnoreCase)
+            ? prototype
+            : $"{prototype} ({displayName})";
+
     public static int RunCheck(
         string request,
         bool json,
@@ -434,6 +440,21 @@ internal static class ChemistryPlanning
                 return;
             }
 
+            // Do not manufacture a dependency with a recipe that consumes one of its
+            // parents. Blood, for example, is a by-product of AmbuzolPlus, whose recipe
+            // itself consumes Ambuzol. Expanding that while making Ambuzol creates a
+            // bogus Blood -> Ambuzol cycle instead of asking for ready Blood.
+            var nonCyclicRecipes = mixRecipes.Where(recipe => recipe.Inputs
+                .Where(input => !input.Catalyst)
+                .All(input => !stack.Contains(input.Prototype))).ToList();
+            if (nonCyclicRecipes.Count == 0)
+            {
+                AddBaseRequirement(prototype, amount);
+                _warnings.Add($"{chemical.DisplayName}: доступный рецепт зависит от уже готовящегося вещества; требуется готовый реагент.");
+                return;
+            }
+            mixRecipes = nonCyclicRecipes;
+
             if (!stack.Add(prototype))
             {
                 AddBaseRequirement(prototype, amount);
@@ -583,14 +604,13 @@ internal static class ChemistryPlanning
         {
             if (!recipe.Operation.Equals("mix", StringComparison.OrdinalIgnoreCase) ||
                 recipe.MinimumTemperatureKelvinExclusive != null ||
-                recipe.MaximumTemperatureKelvinExclusive != null ||
-                recipe.GasProducts.Count != 0)
+                recipe.MaximumTemperatureKelvinExclusive != null)
                 return false;
             if (_gameRules == null)
                 return true;
 
             return _gameRules.Reactions.Any(rule => RecipeMatches(chemical, recipe, rule) &&
-                !rule.HasEffects && rule.MixerCategories.Count == 0 &&
+                (!rule.HasEffects || recipe.GasProducts.Count != 0) && rule.MixerCategories.Count == 0 &&
                 rule.MinTemperature <= 293.15f &&
                 (rule.MaxTemperature == null || rule.MaxTemperature >= 293.15f));
         }

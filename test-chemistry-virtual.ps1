@@ -33,6 +33,16 @@ foreach ($scenario in @('medicine-cycle', 'small-beaker', 'missing-ingredient'))
     if ($scenario -eq 'medicine-cycle' -and ($result.results.Count -ne 5 -or $result.results[3].actions.Count -ne 0)) { throw 'CLI cycle is not idempotent.' }
     Write-Host "PASS offline CLI: $scenario (exit $code)"
 }
-& $runner --chemistry-simulate (Join-Path $PSScriptRoot 'tests\scenarios\medicine-cycle.json') --pid 1 2>$null
-if ($LASTEXITCODE -ne 2) { throw 'Virtual CLI accepted a live PID.' }
+$savedErrorActionPreference = $ErrorActionPreference
+try {
+    # Windows PowerShell 5.1 turns native stderr into an ErrorRecord. This is
+    # an expected negative CLI case, so capture only the process exit code.
+    $ErrorActionPreference = 'Continue'
+    & $runner --chemistry-simulate (Join-Path $PSScriptRoot 'tests\scenarios\medicine-cycle.json') --pid 1 2>$null
+    $livePidExitCode = $LASTEXITCODE
+}
+finally {
+    $ErrorActionPreference = $savedErrorActionPreference
+}
+if ($livePidExitCode -ne 2) { throw 'Virtual CLI accepted a live PID.' }
 Write-Host 'PASS offline CLI: live PID rejected before any game access'
