@@ -1,5 +1,36 @@
-.tools/
-dist/
-recordings/
-calibrations/
-.test-recordings/
+# Сборки и загруженные зависимости
+**/bin/
+**/obj/
+/dist/
+/.tools/
+/ChemMasterAssistant/
+/artifacts/
+*.zip
+
+# Результаты тестов и временные проверки
+/.test-results/
+/.test-recordings/
+/.tmp-*/
+/live-validation-*/
+**/TestResults/
+**/coverage/
+coverage.*
+
+# Личные настройки и данные приложения
+/chemmaster-input.json
+/calibrations/
+/recordings/
+**/logs/
+*.jsonl
+
+# Файлы редакторов и Windows
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+Thumbs.db
+Desktop.ini
+.DS_Store

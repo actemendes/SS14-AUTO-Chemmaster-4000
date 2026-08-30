@@ -1,1 +1,0 @@
-UI STATE OK: checkbox+amount+mode invalidation lifecycle OK

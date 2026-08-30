@@ -127,25 +127,6 @@ internal static class ChemistryVirtual
                     externalPreparation = step;
                     break;
                 }
-                if (!goals.ContainsKey(step.Prototype))
-                {
-                    var roundedTrial = trial.Clone();
-                    var roundedCommands = new List<VirtualCommand>();
-                    try
-                    {
-                        if (Produce(roundedTrial, step, roundedCommands, roundSmallIntermediateBatch: true))
-                        {
-                            trial = roundedTrial;
-                            commands.AddRange(roundedCommands);
-                            continue;
-                        }
-                    }
-                    catch (VirtualStop)
-                    {
-                        // Exact production below remains the safe fallback when the
-                        // extra one-button batch does not fit or lacks reagents.
-                    }
-                }
                 Produce(trial, step, commands);
             }
             if (externalPreparation == null)
@@ -175,8 +156,8 @@ internal static class ChemistryVirtual
         }
     }
 
-    private static bool Produce(VirtualChemMaster machine, ChemistryPlanning.PlanStepOutput step,
-        List<VirtualCommand> commands, bool roundSmallIntermediateBatch = false)
+    private static void Produce(VirtualChemMaster machine, ChemistryPlanning.PlanStepOutput step,
+        List<VirtualCommand> commands)
     {
         if (step.RequiresExternalApparatus || step.GasProducts.Count != 0)
             throw new VirtualStop("external-condition", step.Prototype + ": нужны внешние условия/эффекты; автоматического нагрева нет.");
@@ -188,9 +169,8 @@ internal static class ChemistryVirtual
         decimal remaining = step.TargetAmount / yield;
         int quantum = Enumerable.Range(1, 100).First(n => rule.Inputs.Where(x => !x.Catalyst)
             .All(x => x.Amount * n == decimal.Truncate(x.Amount * n)));
-        var rounded = roundSmallIntermediateBatch && quantum == 1 && remaining > 1 && remaining < 5 &&
-            remaining == decimal.Truncate(remaining);
-        if (rounded) remaining = 5;
+        // BuildForSimulation has already rounded an intermediate target to a whole
+        // stoichiometric batch. Rounding its repeat count again would overproduce it.
         decimal catalysts = rule.Inputs.Where(x => x.Catalyst).Sum(x => x.Amount);
         decimal perRepeat = Math.Max(rule.Inputs.Where(x => !x.Catalyst).Sum(x => x.Amount), rule.Outputs.Sum(x => x.Amount));
         decimal batchMax = decimal.Floor((machine.Capacity / 100m - catalysts) / perRepeat / quantum) * quantum;
@@ -244,7 +224,6 @@ internal static class ChemistryVirtual
             foreach (var command in accepted) { machine.Apply(command); commands.Add(command); }
             remaining -= acceptedSize;
         }
-        return rounded;
     }
 
     private static void PrepareExternalStep(VirtualChemMaster machine,
