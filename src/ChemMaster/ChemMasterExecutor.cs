@@ -8,6 +8,8 @@ using Ss14.Chemistry;
 
 internal sealed class ChemMasterExecutor : IDisposable
 {
+    private const int ScrollWheelSteps = 3;
+
     // Deliberately keep only UI/click guards in the hot execution path. The
     // complete ingredient/recipe preflight still runs before StartAsync.
     private static bool RelaxedChemistryChecks => true;
@@ -823,7 +825,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                 {
                     try
                     {
-                        var wheelDelta = TurboMode ? checked(prepared.Direction * 3) : prepared.Direction;
+                        var wheelDelta = checked(prepared.Direction * ScrollWheelSteps);
                         _input.Scroll(prepared.Snapshot.Window, prepared.Panel, prepared.X, prepared.Y, wheelDelta);
                         scrolled = true;
                     }
@@ -870,7 +872,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                 action.Prototype,
                 prepared.List,
                 prepared.Direction,
-                wheelSteps = TurboMode ? 3 : 1,
+                wheelSteps = ScrollWheelSteps,
                 point = new { clientX = prepared.X, clientY = prepared.Y },
             }), ref scrollTelemetryFault);
             snapshot = await WaitForScrollMovementAsync(prepared.Snapshot, expected, action,
@@ -1011,9 +1013,8 @@ internal sealed class ChemMasterExecutor : IDisposable
             var currentTarget = CaptureScrollTarget(current, action);
             var scroll = SelectScroll(current, action);
             var other = SelectOtherScroll(current, action);
-            if (currentTarget != null && SameScrollTarget(target, currentTarget) && scroll.Visible && scroll.Stable &&
-                Math.Abs(scroll.Value - scroll.Target) <= 0.01 &&
-                (!other.Visible || other.Stable && Math.Abs(other.Value - other.Target) <= 0.01) &&
+            if (currentTarget != null && SameScrollTarget(target, currentTarget) && scroll.Visible &&
+                ScrollGeometrySettled(scroll) && ScrollGeometrySettled(other) &&
                 PointerMatchesScroll(current, currentTarget))
             {
                 ValidateSnapshotFreshness(current);
@@ -1045,10 +1046,10 @@ internal sealed class ChemMasterExecutor : IDisposable
         if (!RelaxedChemistryChecks && !SnapshotInventory.From(snapshot).SameChemicalState(expected))
             throw new ExecutorFailure("Химический State изменился перед позиционированием wheel.");
         var scroll = SelectScroll(snapshot, action);
-        if (!scroll.Visible || !scroll.Stable || Math.Abs(scroll.Value - scroll.Target) > 0.01)
+        if (!scroll.Visible || !ScrollGeometrySettled(scroll))
             throw new ExecutorFailure("Целевая прокрутка изменилась перед позиционированием wheel.");
         var other = SelectOtherScroll(snapshot, action);
-        if (other.Visible && (!other.Stable || Math.Abs(other.Value - other.Target) > 0.01))
+        if (!ScrollGeometrySettled(other))
             throw new ExecutorFailure("Вторая видимая прокрутка движется; позиционирование wheel запрещено.");
         var current = CaptureScrollTarget(snapshot, action);
         if (current == null || !SameScrollTarget(current, target))
@@ -1073,10 +1074,8 @@ internal sealed class ChemMasterExecutor : IDisposable
             !prepared.ScrollBar.Equals(RectFingerprint.From(scrollBar)) ||
             !prepared.Scroll.Equals(ScrollFingerprint.From(SelectScroll(snapshot, action))) ||
             !prepared.OtherScroll.Equals(ScrollFingerprint.From(SelectOtherScroll(snapshot, action))) ||
-            !prepared.Scroll.Visible || !prepared.Scroll.Stable ||
-            Math.Abs(prepared.Scroll.Value - prepared.Scroll.Target) > 0.01 ||
-            prepared.OtherScroll.Visible && (!prepared.OtherScroll.Stable ||
-                Math.Abs(prepared.OtherScroll.Value - prepared.OtherScroll.Target) > 0.01))
+            !prepared.Scroll.Visible || !ScrollGeometrySettled(prepared.Scroll.ToState()) ||
+            !ScrollGeometrySettled(prepared.OtherScroll.ToState()))
             return false;
         var row = FindRow(snapshot, action);
         if (!row.DoseButtons.TryGetValue(action.Dose, out var button) || viewport.Contains(button)) return false;
@@ -1103,7 +1102,7 @@ internal sealed class ChemMasterExecutor : IDisposable
             ValidateReadySnapshot(candidate, requireEmptyBeaker: false, requireCalibration: true,
                 enforceTransferMode: false);
             var scroll = SelectScroll(candidate, action);
-            if (scroll.Stable && Math.Abs(scroll.Value - scroll.Target) <= 0.01)
+            if (ScrollGeometrySettled(scroll))
             {
                 if (stableTarget != null && Math.Abs(stableTarget.Value - scroll.Target) <= 0.01)
                     return candidate;
@@ -1202,7 +1201,7 @@ internal sealed class ChemMasterExecutor : IDisposable
             // Attribute every scroll mutation before handling a simultaneous
             // chemistry change. Once wheel was committed, a changed sibling list
             // is an emergency even if the user also changed reagent state.
-            if (!RelaxedChemistryChecks && !SnapshotInventory.From(current).SameChemicalState(expected))
+            if (!TurboMode && !SnapshotInventory.From(current).SameChemicalState(expected))
             {
                 if (cancellationToken.IsCancellationRequested || _cancelRequested || _input.EmergencyStopped)
                     return current;
@@ -1215,7 +1214,7 @@ internal sealed class ChemMasterExecutor : IDisposable
             }
             if (valueChanged || targetChanged)
                 movementObserved = true;
-            if (movementObserved && scroll.Stable && Math.Abs(scroll.Value - scroll.Target) <= 0.01)
+            if (movementObserved && ScrollGeometrySettled(scroll))
             {
                 if (!MovedInExpectedDirection(beforeScroll, scroll, direction))
                     LatchUnexpectedWheelRoute(action, direction, beforeScroll, scroll,
@@ -1223,7 +1222,7 @@ internal sealed class ChemMasterExecutor : IDisposable
                         "Стабильное положение после wheel не соответствует ожидаемому направлению.");
                 if (firstStableTarget == null)
                 {
-                    if (RelaxedChemistryChecks)
+                    if (TurboMode)
                     {
                         CaptureTelemetryFault(() => _journal.Write("scroll-confirmed",
                             ChemMasterExecutorState.WaitingForStableScroll, new
@@ -1976,7 +1975,7 @@ internal sealed class ChemMasterExecutor : IDisposable
         action.FromBuffer ? snapshot.State.Ui!.InputScroll : snapshot.State.Ui!.BufferScroll;
 
     private static bool ScrollGeometrySettled(ChemMasterScrollState scroll) =>
-        !scroll.Visible || scroll.Stable && Math.Abs(scroll.Value - scroll.Target) <= 0.01;
+        !scroll.Visible || scroll.Stable && ChemCalibration.ScrollSettled(scroll);
 
     private static bool SameRect(ChemMasterUiRect left, ChemMasterUiRect right) =>
         left.X == right.X && left.Y == right.Y && left.Width == right.Width && left.Height == right.Height;

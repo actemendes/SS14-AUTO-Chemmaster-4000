@@ -249,15 +249,16 @@ internal static class ChemMasterUiReader
         if (!Finite(value) || !Finite(target) || !Finite(page) || !Finite(maximum) ||
             value < 0 || target < 0 || page < 0 || maximum < 0 || value > maximum || target > maximum)
             throw new InvalidDataException("Некорректное состояние прокрутки.");
-        return new ScrollReading(scroll, bar, verticalVisible, new ChemMasterScrollState
+        var state = new ChemMasterScrollState
         {
             Value = value,
             Target = target,
             Page = page,
             Maximum = maximum,
-            Stable = Math.Abs(value - target) <= 0.01f,
             Visible = verticalVisible,
-        });
+        };
+        state.Stable = ChemCalibration.ScrollSettled(state);
+        return new ScrollReading(scroll, bar, verticalVisible, state);
     }
 
     private static ChemMasterUiRect ReadViewportRect(ScrollReading reading, ClrObject root, float scale)

@@ -17,6 +17,9 @@ using System.Windows.Forms;
 internal sealed class MainForm : Form
 {
     private const decimal DefaultTargetAmount = 100m;
+    private const string ReleasesUrl = "https://github.com/actemendes/ChemMaster-Assistant/releases";
+    private static readonly string CurrentVersion =
+        typeof(MainForm).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
     private static readonly Color ThemeWindow = Color.FromArgb(30, 30, 34);       // #1E1E22
     private static readonly Color ThemePanel = Color.FromArgb(47, 47, 59);        // #2F2F3B
     private static readonly Color ThemeSurface = Color.FromArgb(37, 38, 50);      // #252632
@@ -77,9 +80,10 @@ internal sealed class MainForm : Form
     private SplitContainer _inventoriesSplit = null!;
     private SplitContainer _expectedActualSplit = null!;
 
-    private readonly Button _connectButton = NewButton("Подключить заново");
-    private readonly Button _calibrateButton = NewButton("Калибровать текущее");
-    private readonly Button _openLogsButton = NewButton("Открыть журналы");
+    private readonly ToolStripButton _connectButton = new("Подключить заново");
+    private readonly ToolStripButton _calibrateButton = new("Калибровать");
+    private readonly ToolStripButton _openLogsButton = new("Debug-логи");
+    private readonly ToolStripButton _checkUpdatesButton = new("Проверить обновления");
     private readonly Button _previewButton = NewButton("Предпросмотр");
     private readonly Button _startButton = NewButton("Начать и перейти в игру");
     private readonly Button _pauseButton = NewButton("Пауза");
@@ -151,7 +155,7 @@ internal sealed class MainForm : Form
         _targets = _medicineChoices.ToDictionary(item => item.Prototype,
             _ => new TargetSelection(), StringComparer.OrdinalIgnoreCase);
 
-        Text = "ChemMasterAssistant — локальный помощник Химмастера 4000";
+        Text = "ChemMaster Assistant — помощник по автоварке химии в SS14";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(1180, 760);
         Size = new Size(1480, 920);
@@ -270,19 +274,17 @@ internal sealed class MainForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 3,
             Padding = new Padding(8),
         };
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 66));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
         Controls.Add(root);
 
         var menu = BuildMainMenu();
         MainMenuStrip = menu;
         root.Controls.Add(menu, 0, 0);
-        root.Controls.Add(BuildConnectionHeader(), 0, 1);
         _centerSplit = new SplitContainer
         {
             Dock = DockStyle.Fill,
@@ -290,45 +292,31 @@ internal sealed class MainForm : Form
         };
         _centerSplit.Panel1.Controls.Add(BuildSelectionPanel());
         _centerSplit.Panel2.Controls.Add(BuildObservationPanel());
-        root.Controls.Add(_centerSplit, 0, 2);
-        root.Controls.Add(BuildCommandFooter(), 0, 3);
+        root.Controls.Add(_centerSplit, 0, 1);
+        root.Controls.Add(BuildCommandFooter(), 0, 2);
     }
 
     private MenuStrip BuildMainMenu()
     {
         var menu = new MenuStrip { Dock = DockStyle.Fill };
-        var execution = new ToolStripMenuItem("Выполнение");
-        execution.DropDownItems.Add(_twoPhaseMenuItem);
-        execution.DropDownItems.Add(_turboMenuItem);
-        menu.Items.Add(execution);
-        return menu;
-    }
+        var modes = new ToolStripMenuItem("Режимы");
+        modes.DropDownItems.Add(_twoPhaseMenuItem);
+        modes.DropDownItems.Add(_turboMenuItem);
+        menu.Items.Add(modes);
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(_connectButton);
+        menu.Items.Add(_calibrateButton);
 
-    private Control BuildConnectionHeader()
-    {
-        var panel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        var labels = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2, Padding = new Padding(4) };
-        labels.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        labels.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        labels.Controls.Add(_connectionLabel, 0, 0);
-        labels.Controls.Add(_interfaceLabel, 1, 0);
-        labels.Controls.Add(_safetyLabel, 0, 1);
-        labels.SetColumnSpan(_safetyLabel, 2);
-        panel.Controls.Add(labels, 0, 0);
-
-        var buttons = new FlowLayoutPanel
+        var versionLabel = new ToolStripLabel("Версия " + CurrentVersion)
         {
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false,
-            Padding = new Padding(4, 12, 4, 4),
+            Alignment = ToolStripItemAlignment.Right,
         };
-        buttons.Controls.AddRange(new Control[] { _connectButton, _calibrateButton, _openLogsButton });
-        panel.Controls.Add(buttons, 1, 0);
-        return WrapGroup("Подключение и безопасность", panel);
+        _checkUpdatesButton.Alignment = ToolStripItemAlignment.Right;
+        _openLogsButton.Alignment = ToolStripItemAlignment.Right;
+        menu.Items.Add(versionLabel);
+        menu.Items.Add(_checkUpdatesButton);
+        menu.Items.Add(_openLogsButton);
+        return menu;
     }
 
     private Control BuildSelectionPanel()
@@ -367,7 +355,7 @@ internal sealed class MainForm : Form
         };
         _inventoriesSplit = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
         _inventoriesSplit.Panel1.Controls.Add(WrapGroup("Буфер", _bufferGrid));
-        _inventoriesSplit.Panel2.Controls.Add(WrapGroup("Рантайм помощник", BuildAssistantPanel()));
+        _inventoriesSplit.Panel2.Controls.Add(WrapGroup("ChemMaster Assistant", BuildAssistantPanel()));
         _observationSplit.Panel1.Controls.Add(_inventoriesSplit);
 
         var tabs = new DarkTabControl { Dock = DockStyle.Fill };
@@ -429,6 +417,19 @@ internal sealed class MainForm : Form
 
     private Control BuildCommandFooter()
     {
+        var panel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+        panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        var statuses = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1 };
+        statuses.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30));
+        statuses.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
+        statuses.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
+        statuses.Controls.Add(_connectionLabel, 0, 0);
+        statuses.Controls.Add(_interfaceLabel, 1, 0);
+        statuses.Controls.Add(_safetyLabel, 2, 0);
+        panel.Controls.Add(statuses, 0, 0);
+
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, AutoScroll = false };
         buttons.Controls.AddRange(new Control[]
         {
@@ -436,7 +437,8 @@ internal sealed class MainForm : Form
             _acceptExternalButton, _abortExternalButton,
             _emergencyButton, _resetEmergencyButton,
         });
-        return WrapGroup("Управление", buttons);
+        panel.Controls.Add(buttons, 0, 1);
+        return WrapGroup("Управление и состояние", panel);
     }
 
     private void ApplyDarkTheme()
@@ -652,6 +654,7 @@ internal sealed class MainForm : Form
         _connectButton.Click += async (_, _) => await RefreshConnectionAsync(forceRediscovery: true, showErrors: true);
         _calibrateButton.Click += async (_, _) => await CalibrateCurrentAsync();
         _openLogsButton.Click += (_, _) => OpenLogs();
+        _checkUpdatesButton.Click += (_, _) => OpenReleasesPage();
         _previewButton.Click += async (_, _) => await PreviewSelectedAsync(showErrors: true);
         _startButton.Click += async (_, _) => await StartSelectedAsync();
         _pauseButton.Click += (_, _) =>
@@ -745,7 +748,7 @@ internal sealed class MainForm : Form
 
     private void UpdateTurboPresentation()
     {
-        Text = "ChemMasterAssistant — локальный помощник Химмастера 4000" +
+        Text = "ChemMaster Assistant — помощник по автоварке химии в SS14" +
             (_settings.TurboMode ? " [ТУРБО]" : "");
         ShowHotkeyStatus();
     }
@@ -1455,6 +1458,19 @@ internal sealed class MainForm : Form
         catch (Exception ex) { ShowError(ex.Message); }
     }
 
+    private void OpenReleasesPage()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = ReleasesUrl, UseShellExecute = true });
+            SetAssistantMessage("Открываю страницу релизов ChemMaster Assistant в браузере.", AssistantTone.Info);
+        }
+        catch (Exception ex)
+        {
+            ShowError("Не удалось открыть страницу обновлений: " + ex.Message);
+        }
+    }
+
     private async void MainFormClosing(object? sender, FormClosingEventArgs eventArgs)
     {
         if (_allowClose || _executor?.IsRunning != true)
@@ -1573,7 +1589,25 @@ internal sealed class MainForm : Form
             ShouldRestoreAssistantForPhasePause(ChemMasterExecutorState.Paused,
                 ExternalDecisionKind.UnexpectedState))
             throw new InvalidOperationException("Маршрут фокуса двухфазной смены мензурки повреждён.");
-        return "checkbox+amount+mode invalidation, category/search filtering and two-phase focus routing OK";
+        var mainMenu = form.MainMenuStrip;
+        if (mainMenu == null || !mainMenu.Items.Cast<ToolStripItem>().Any(item =>
+                string.Equals(item.Text, "Режимы", StringComparison.Ordinal)))
+            throw new InvalidOperationException("Верхнее меню режимов не найдено.");
+        var versionItem = mainMenu.Items.Cast<ToolStripItem>().SingleOrDefault(item =>
+            string.Equals(item.Text, "Версия " + CurrentVersion, StringComparison.Ordinal));
+        if (versionItem == null || versionItem.Alignment != ToolStripItemAlignment.Right)
+            throw new InvalidOperationException("Номер версии не показан справа в верхнем меню.");
+        if (form._checkUpdatesButton.Owner != mainMenu ||
+            !string.Equals(form._checkUpdatesButton.Text, "Проверить обновления", StringComparison.Ordinal) ||
+            form._checkUpdatesButton.Alignment != ToolStripItemAlignment.Right ||
+            !Uri.TryCreate(ReleasesUrl, UriKind.Absolute, out var releasesUri) ||
+            releasesUri.Scheme != Uri.UriSchemeHttps)
+            throw new InvalidOperationException("Кнопка или HTTPS-адрес проверки обновлений повреждены.");
+        if (form._openLogsButton.Owner != mainMenu ||
+            !string.Equals(form._openLogsButton.Text, "Debug-логи", StringComparison.Ordinal) ||
+            form._openLogsButton.Alignment != ToolStripItemAlignment.Right)
+            throw new InvalidOperationException("Кнопка debug-логов не находится справа в верхнем меню.");
+        return "checkbox+amount+mode invalidation, category/search filtering, two-phase focus routing and menu/update controls OK";
     }
 
     private void RunPreviewInvalidationUiStateTest()
@@ -1609,7 +1643,7 @@ internal sealed class MainForm : Form
         UpdateButtons();
         if (!_previewButton.Enabled || !_calibrateButton.Enabled ||
             !_previewButton.Text.Equals("Предпросмотр", StringComparison.Ordinal) ||
-            !_calibrateButton.Text.Equals("Калибровать текущее", StringComparison.Ordinal))
+            !string.Equals(_calibrateButton.Text, "Калибровать текущее", StringComparison.Ordinal))
             throw new InvalidOperationException("User actions cannot be queued while a background read is active.");
         _refreshing = false;
         _refreshCompletion.TrySetResult(true);

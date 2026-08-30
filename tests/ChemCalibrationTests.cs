@@ -27,6 +27,28 @@ internal static class ChemCalibrationTests
             Test("missing live UI data blocks mapping", delegate { var p = Profile(); Throws(delegate { Preview(p, null, "Oxygen", "1", 0, p.Regions["frame"]); }); });
             Test("invalid UI order blocks mapping", delegate { var p = Profile(); var ui = Ui(); ui.RowOrderValid = false; Throws(delegate { Preview(p, ui, "Oxygen", "1", 0, p.Regions["frame"]); }); });
             Test("moving live scroll blocks mapping", delegate { var p = Profile(); var ui = Ui(); ui.BufferScroll.Stable = false; Throws(delegate { Preview(p, ui, "Oxygen", "1", 0, p.Regions["frame"]); }); });
+            Test("row removal accepts value clamped to new legal edge", delegate
+            {
+                True(ChemCalibration.ScrollSettled(new ChemMasterScrollState
+                {
+                    Value = 318.6668,
+                    Target = 347.3334,
+                    Page = 772.6667,
+                    Maximum = 1091.3335,
+                    Visible = true,
+                }));
+            });
+            Test("ordinary in-range scroll animation remains unsettled", delegate
+            {
+                True(!ChemCalibration.ScrollSettled(new ChemMasterScrollState
+                {
+                    Value = 318.6668,
+                    Target = 300,
+                    Page = 772.6667,
+                    Maximum = 1091.3335,
+                    Visible = true,
+                }));
+            });
             Test("untrusted order source rejected", delegate { var p = Profile(); var ui = Ui(); ui.Source = "raw-inventory"; Throws(delegate { Preview(p, ui, "Oxygen", "1", 0, p.Regions["frame"]); }); });
             Test("different inventory rows rejected", delegate { Throws(delegate { ChemCalibration.ValidateRows(Ui().BufferRows, new[] { "Nitrogen", "Water", "Iron" }); }); });
             Test("duplicate raw IDs rejected", delegate { Throws(delegate { ChemCalibration.ValidateRows(Ui().BufferRows, new[] { "Water", "Water", "Oxygen" }); }); });

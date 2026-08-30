@@ -134,14 +134,21 @@ internal sealed class WindowsGameInput : IGameInputDriver
     private const int SmCyVirtualScreen = 79;
     private readonly long _windowHandle;
     private readonly int _processId;
+    private readonly ICursorPositionDriver _cursor;
     private readonly object _commitSync = new();
     private int _emergencyStopped;
 
     public WindowsGameInput(long windowHandle, int processId)
+        : this(windowHandle, processId, WindowsCursorPositionDriver.Instance)
+    {
+    }
+
+    internal WindowsGameInput(long windowHandle, int processId, ICursorPositionDriver cursor)
     {
         if (windowHandle == 0 || processId <= 0) throw new ArgumentException("Некорректная сессия SS14.");
         _windowHandle = windowHandle;
         _processId = processId;
+        _cursor = cursor ?? throw new ArgumentNullException(nameof(cursor));
     }
 
     public bool EmergencyStopped => Volatile.Read(ref _emergencyStopped) != 0;
@@ -198,16 +205,8 @@ internal sealed class WindowsGameInput : IGameInputDriver
             if (!panel.Contains(nudgeClientX, clientY))
                 throw new InvalidOperationException("Не удалось выбрать безопасную точку для движения курсора.");
             var nudgeScreenX = checked(target.Window.ClientScreenX + nudgeClientX);
-            if (!WindowsGameWindow.Native.SetCursorPos(nudgeScreenX, target.Screen.Y) ||
-                !WindowsGameWindow.Native.GetCursorPos(out var nudge) ||
-                nudge.X != nudgeScreenX || nudge.Y != target.Screen.Y)
-                throw new Win32Exception(Marshal.GetLastWin32Error(),
-                    "Windows не подтвердил промежуточное положение курсора ChemMaster.");
-            if (!WindowsGameWindow.Native.SetCursorPos(target.Screen.X, target.Screen.Y) ||
-                !WindowsGameWindow.Native.GetCursorPos(out var cursor) ||
-                cursor.X != target.Screen.X || cursor.Y != target.Screen.Y)
-                throw new Win32Exception(Marshal.GetLastWin32Error(),
-                    "Windows не подтвердил целевое положение курсора ChemMaster.");
+            StagePointerWithRetry(_cursor, nudgeScreenX, target.Screen.Y,
+                target.Screen.X, target.Screen.Y);
 
             var final = Preflight(expectedWindow, panel, clientX, clientY);
             if (final.Screen.X != target.Screen.X || final.Screen.Y != target.Screen.Y ||
@@ -235,7 +234,7 @@ internal sealed class WindowsGameInput : IGameInputDriver
                 }
                 catch (IndeterminateGameInputException ex) when (wheelSteps.Length > 1)
                 {
-                    // Earlier wheel steps in this turbo operation are already
+                    // Earlier wheel steps in this three-step operation are already
                     // committed. Preserve their count so reconciliation never
                     // retries a partially delivered three-step scroll.
                     throw new IndeterminateGameInputException(ex.NativeErrorCode,
@@ -260,6 +259,48 @@ internal sealed class WindowsGameInput : IGameInputDriver
         var steps = new int[Math.Abs(wheelDelta / unit)];
         Array.Fill(steps, Math.Sign(wheelDelta) * unit);
         return steps;
+    }
+
+    internal static void StagePointerWithRetry(ICursorPositionDriver cursor,
+        int nudgeX, int nudgeY, int targetX, int targetY)
+    {
+        PositionCursorWithRetry(cursor, nudgeX, nudgeY, "промежуточное");
+        // Give Windows and Robust one partial frame before moving back from the
+        // nudge. Back-to-back SetCursorPos calls one pixel apart can otherwise be
+        // observed at the first coordinate even though both calls returned true.
+        cursor.WaitForUpdate();
+        PositionCursorWithRetry(cursor, targetX, targetY, "целевое");
+    }
+
+    private static void PositionCursorWithRetry(ICursorPositionDriver cursor,
+        int expectedX, int expectedY, string stage)
+    {
+        const int maximumAttempts = 4;
+        var observedX = Int32.MinValue;
+        var observedY = Int32.MinValue;
+        var observed = false;
+        var nativeError = 0;
+        for (var attempt = 1; attempt <= maximumAttempts; attempt++)
+        {
+            if (!cursor.SetPosition(expectedX, expectedY))
+                nativeError = cursor.LastError;
+            else if (cursor.TryGetPosition(out observedX, out observedY))
+            {
+                observed = true;
+                if (observedX == expectedX && observedY == expectedY)
+                    return;
+            }
+            else
+                nativeError = cursor.LastError;
+
+            if (attempt < maximumAttempts)
+                cursor.WaitForUpdate();
+        }
+
+        var actual = observed ? $"({observedX}, {observedY})" : "не прочитано";
+        throw new Win32Exception(nativeError,
+            $"Windows не подтвердил {stage} положение курсора ChemMaster за {maximumAttempts} попытки: " +
+            $"ожидалось ({expectedX}, {expectedY}), фактически {actual}.");
     }
 
     private PreparedTarget VerifyPointerAtTarget(GameWindowSnapshot expected, ChemMasterUiRect panel,
@@ -366,6 +407,41 @@ internal sealed class WindowsGameInput : IGameInputDriver
     }
 
     private sealed record PreparedTarget(GameWindowSnapshot Window, WindowsGameWindow.Native.Point Screen);
+}
+
+internal interface ICursorPositionDriver
+{
+    int LastError { get; }
+    bool SetPosition(int x, int y);
+    bool TryGetPosition(out int x, out int y);
+    void WaitForUpdate();
+}
+
+internal sealed class WindowsCursorPositionDriver : ICursorPositionDriver
+{
+    public static readonly WindowsCursorPositionDriver Instance = new();
+    private int _lastError;
+    public int LastError => _lastError;
+
+    private WindowsCursorPositionDriver() { }
+
+    public bool SetPosition(int x, int y)
+    {
+        var success = WindowsGameWindow.Native.SetCursorPos(x, y);
+        _lastError = success ? 0 : Marshal.GetLastWin32Error();
+        return success;
+    }
+
+    public bool TryGetPosition(out int x, out int y)
+    {
+        var success = WindowsGameWindow.Native.GetCursorPos(out var point);
+        _lastError = success ? 0 : Marshal.GetLastWin32Error();
+        x = point.X;
+        y = point.Y;
+        return success;
+    }
+
+    public void WaitForUpdate() => Thread.Sleep(8);
 }
 
 internal sealed class IndeterminateGameInputException : Win32Exception

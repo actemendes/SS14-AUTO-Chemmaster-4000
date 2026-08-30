@@ -164,6 +164,23 @@ namespace Ss14.Chemistry
         // Columns have different widths. Never interpolate X from two endpoints.
         public static readonly string[] Doses = { "1", "5", "10", "15", "20", "25", "30", "50", "75", "100", "all" };
 
+        public static bool ScrollSettled(ChemMasterScrollState scroll)
+        {
+            if (scroll == null || !Finite(scroll.Value) || !Finite(scroll.Target) ||
+                !Finite(scroll.Page) || !Finite(scroll.Maximum) ||
+                scroll.Value < 0 || scroll.Target < 0 || scroll.Page < 0 || scroll.Maximum < 0)
+                return false;
+
+            // Robust stores MaxValue as the full content range while Value is
+            // clamped to MaxValue - Page. When rows disappear, ValueTarget may
+            // retain the old out-of-range destination even though Value has
+            // already settled at the new legal edge.
+            var upperBound = Math.Max(0, scroll.Maximum - scroll.Page);
+            var effectiveTarget = Math.Min(Math.Max(scroll.Target, 0), upperBound);
+            return scroll.Value <= upperBound + 0.01 &&
+                Math.Abs(scroll.Value - effectiveTarget) <= 0.01;
+        }
+
         public static List<CalibrationStep> Steps(string view)
         {
             if (view != "input" && view != "output") throw new ArgumentException("Неизвестная вкладка.");

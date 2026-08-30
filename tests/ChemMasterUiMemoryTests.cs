@@ -62,6 +62,11 @@ internal static class ChemMasterUiMemoryTests
             Require(result.BufferRows.Select(x => x.Prototype).SequenceEqual(new[] { "Oxygen", "Nitrogen" }), "UI order was replaced by raw order.");
             Require(result.InputScroll != null && result.InputScroll.Visible && result.InputScroll.Stable && result.InputScroll.Value == 0, "Input scroll was not read.");
             Require(result.BufferScroll != null && result.BufferScroll.Visible && !result.BufferScroll.Stable && result.BufferScroll.Value == 25 && result.BufferScroll.Target == 50, "Animated buffer scroll was not exposed.");
+            Require(ChemCalibration.ScrollSettled(new ChemMasterScrollState
+                {
+                    Value = 490, Target = 500, Page = 110, Maximum = 600, Visible = true,
+                }),
+                "Target beyond MaxValue-Page was not normalized to the legal scrollbar edge.");
             Console.WriteLine("PASS read actual button IDs and display order from fixture process memory");
 
             Require(Math.Abs(result.UiScale - 1.25) < 0.0001, "WindowRoot UI scale was not read.");

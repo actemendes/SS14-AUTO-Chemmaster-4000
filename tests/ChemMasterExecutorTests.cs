@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -39,8 +40,12 @@ internal static class ChemMasterExecutorTests
         await Case("Нет изменения State: timeout без повторного клика", NoStateChange);
         await Case("Внешнее изменение буфера ставит на паузу и допускает abort", ExternalChangeAbort);
         await Case("Частичный перенос ставит на паузу и не разрешает replan с грязной мензуркой", PartialTransfer);
-        await Case("Движение scroll подтверждается быстрыми reads и полным финальным snapshot", MovingScroll);
-        await Case("Турбо-прокрутка отправляет три последовательных шага по 120", TurboTripleScroll);
+        await Case("Обычный режим прокручивает трижды и подтверждает движение полным snapshot", MovingScroll);
+        await Case("Удаление строки принимает Value на границе при устаревшем ValueTarget",
+            RowRemovalClampsScrollValueBeforeTarget);
+        await Case("Тройная прокрутка раскладывается на три шага и работает в турбо", TurboTripleScroll);
+        await Case("Временный промах SetCursorPos исправляется без клика", TransientCursorPositionRetry);
+        await Case("Постоянный промах SetCursorPos ограниченно останавливается без ввода", PersistentCursorPositionFailure);
         await Case("Некорректный cached hint принудительно переключается на полный scan", InvalidFastHintForcesFullScan);
         await Case("Fast fallback-full hint всё равно требует отдельный финальный full", FastFallbackHintStillRequiresFinalFull);
         await Case("Неоднозначный полный snapshot после fast hint блокирует следующий ввод", FullAmbiguityAfterFastHint);
@@ -356,6 +361,8 @@ internal static class ChemMasterExecutorTests
         await harness.Executor.StartAsync("Bicaridine=10", ChemistryTargetMode.Ensure);
         Equal(harness.Executor.Progress.State, ChemMasterExecutorState.Completed, harness.Executor.Progress.Message);
         Assert(harness.World.ScrollCount >= 1, "Скрытая строка не прокручивалась");
+        Assert(harness.World.WheelDeltas.All(delta => Math.Abs(delta) == 360),
+            "Обычный режим не запросил тройную прокрутку");
         Assert(harness.World.ScrollTargetChangeCount >= 1, "ValueTarget не менялся между snapshot");
         Assert(harness.World.FastReadCount >= harness.World.ScrollCount,
             "Анимация прокрутки не использовала быстрые причинные snapshot");
@@ -379,9 +386,12 @@ internal static class ChemMasterExecutorTests
 
     private static async Task TurboTripleScroll()
     {
-        var expanded = WindowsGameInput.ExpandWheelDelta(-360);
-        Assert(expanded.SequenceEqual(new[] { -120, -120, -120 }),
-            "Turbo delta не разложена на три последовательных wheel-события");
+        var expandedDown = WindowsGameInput.ExpandWheelDelta(-360);
+        Assert(expandedDown.SequenceEqual(new[] { -120, -120, -120 }),
+            "Тройная прокрутка вниз не разложена на три последовательных wheel-события");
+        var expandedUp = WindowsGameInput.ExpandWheelDelta(360);
+        Assert(expandedUp.SequenceEqual(new[] { 120, 120, 120 }),
+            "Тройная прокрутка вверх не разложена на три последовательных wheel-события");
         Throws<ArgumentOutOfRangeException>(() => WindowsGameInput.ExpandWheelDelta(-480));
 
         using var harness = await Harness.Create(HiddenBicaridineStock(),
@@ -392,6 +402,68 @@ internal static class ChemMasterExecutorTests
         Assert(harness.World.WheelDeltas.Count > 0, "Турбо-сценарий не потребовал прокрутку");
         Assert(harness.World.WheelDeltas.All(delta => Math.Abs(delta) == 360),
             "Executor не запросил тройную прокрутку в турбо-режиме");
+    }
+
+    private static async Task RowRemovalClampsScrollValueBeforeTarget()
+    {
+        using var harness = await Harness.Create(HiddenBicaridineStock());
+        harness.World.PreserveOutOfRangeScrollTarget = true;
+
+        await harness.Executor.StartAsync("Bicaridine=10", ChemistryTargetMode.Ensure);
+
+        Equal(harness.Executor.Progress.State, ChemMasterExecutorState.Completed,
+            harness.Executor.Progress.Message);
+        Assert(harness.World.OutOfRangeTargetObservationCount > 0,
+            "Сценарий не воспроизвёл ValueTarget за новой границей после удаления строки");
+        Equal(harness.World.Machine.Buffer.Get("Bicaridine"), 1000,
+            "После нормализации края прокрутки рецепт не завершился");
+    }
+
+    private static Task TransientCursorPositionRetry()
+    {
+        var cursor = new FakeCursorPositionDriver(
+            (1902, 1249), // nudge confirmed
+            (1902, 1249), // first target observation is still at nudge
+            (1901, 1249)); // retry reaches the exact target
+
+        WindowsGameInput.StagePointerWithRetry(cursor, 1902, 1249, 1901, 1249);
+
+        Equal(cursor.SetPositions.Count, 3,
+            "Временный промах должен потребовать ровно один повтор целевого движения");
+        Equal(cursor.WaitCount, 2,
+            "Нет отдельного кадра между nudge/target или перед повтором");
+        Assert(cursor.SetPositions.SequenceEqual(new[]
+            {
+                (1902, 1249),
+                (1901, 1249),
+                (1901, 1249),
+            }),
+            "Повтор изменил подтверждённую целевую координату");
+        return Task.CompletedTask;
+    }
+
+    private static Task PersistentCursorPositionFailure()
+    {
+        var cursor = new FakeCursorPositionDriver(
+            (1902, 1249),
+            (1902, 1249),
+            (1903, 1249),
+            (1902, 1250),
+            (1900, 1249));
+
+        Throws<Win32Exception>(() =>
+        {
+            WindowsGameInput.StagePointerWithRetry(cursor, 1902, 1249, 1901, 1249);
+            return null;
+        });
+
+        Equal(cursor.SetPositions.Count, 5,
+            "После четырёх промахов целевого движения попытки должны прекратиться");
+        Equal(cursor.WaitCount, 4,
+            "Постоянный промах использовал неожиданный цикл ожиданий");
+        Assert(cursor.SetPositions.Skip(1).All(point => point == (1901, 1249)),
+            "После промаха курсор пытался уйти на другую координату");
+        return Task.CompletedTask;
     }
 
     private static async Task FullAmbiguityAfterFastHint()
@@ -1431,6 +1503,36 @@ internal static class ChemMasterExecutorTests
         public void Dispose() => _inner.Dispose();
     }
 
+    private sealed class FakeCursorPositionDriver : ICursorPositionDriver
+    {
+        private readonly Queue<(int X, int Y)> _observations;
+        public List<(int X, int Y)> SetPositions { get; } = new();
+        public int WaitCount { get; private set; }
+        public int LastError => 0;
+
+        public FakeCursorPositionDriver(params (int X, int Y)[] observations) =>
+            _observations = new Queue<(int X, int Y)>(observations);
+
+        public bool SetPosition(int x, int y)
+        {
+            SetPositions.Add((x, y));
+            return true;
+        }
+
+        public bool TryGetPosition(out int x, out int y)
+        {
+            if (_observations.Count == 0)
+            {
+                x = y = 0;
+                return false;
+            }
+            (x, y) = _observations.Dequeue();
+            return true;
+        }
+
+        public void WaitForUpdate() => WaitCount++;
+    }
+
     private sealed class FakeChemMasterWorld : IExecutorSnapshotSource, IGameInputDriver
     {
         private readonly object _sync = new();
@@ -1498,6 +1600,7 @@ internal static class ChemMasterExecutorTests
         public bool InvalidateFastReadsUntilFullControl { get; set; }
         public bool InvalidateFullControlAfterFast { get; set; }
         public bool RegressTimestampOnNextFullAfterFast { get; set; }
+        public bool PreserveOutOfRangeScrollTarget { get; set; }
         public bool ActivationSucceeds { get; set; } = true;
         public bool ActivationSetsWindowActive { get; set; } = true;
         public int ReadCount { get; private set; }
@@ -1509,6 +1612,7 @@ internal static class ChemMasterExecutorTests
         public int PointerMoveCount { get; private set; }
         public int ScrollCount { get; private set; }
         public int ScrollTargetChangeCount { get; private set; }
+        public int OutOfRangeTargetObservationCount { get; private set; }
         public List<int> WheelDeltas { get; } = new();
         public List<ClickRecord> Clicks { get; } = new();
         public ManualResetEventSlim ClickEntered { get; } = new(false);
@@ -1527,7 +1631,7 @@ internal static class ChemMasterExecutorTests
             {
                 ReadCount = FullReadCount = FastReadCount = ActivationCallCount =
                     ClickCount = AppliedClickCount = PointerMoveCount = ScrollCount =
-                    ScrollTargetChangeCount = 0;
+                    ScrollTargetChangeCount = OutOfRangeTargetObservationCount = 0;
                 Clicks.Clear();
                 WheelDeltas.Clear();
                 _readActions.Clear();
@@ -1543,6 +1647,7 @@ internal static class ChemMasterExecutorTests
                 InvalidateFastReadsUntilFullControl = false;
                 InvalidateFullControlAfterFast = false;
                 RegressTimestampOnNextFullAfterFast = false;
+                PreserveOutOfRangeScrollTarget = false;
                 _lastReadWasFast = false;
                 _forceFullInvalid = false;
                 _invalidFastArmed = false;
@@ -1900,8 +2005,12 @@ internal static class ChemMasterExecutorTests
             var bufferViewport = new ChemMasterUiRect { X = 125, Y = 390, Width = 820, Height = 160 };
             var inputScrollBar = new ChemMasterUiRect { X = 945, Y = 105, Width = 20, Height = 160 };
             var bufferScrollBar = new ChemMasterUiRect { X = 945, Y = 390, Width = 20, Height = 160 };
-            ClampScroll(virtualUi.BufferRows.Count, ref _bufferValue, ref _bufferTarget);
+            ClampScroll(virtualUi.BufferRows.Count, ref _bufferValue, ref _bufferTarget,
+                PreserveOutOfRangeScrollTarget);
             ClampScroll(virtualUi.InputRows.Count, ref _inputValue, ref _inputTarget);
+            if (virtualUi.BufferRows.Count > 5 &&
+                _bufferTarget > Math.Max(0, virtualUi.BufferRows.Count - 5) + 0.01)
+                OutOfRangeTargetObservationCount++;
             var ui = new ChemMasterUiSnapshot
             {
                 Source = "live-ui-controls",
@@ -1929,14 +2038,14 @@ internal static class ChemMasterExecutorTests
                 {
                     Value = _bufferValue, Target = _bufferTarget, Stable = _bufferStable,
                     Page = virtualUi.BufferRows.Count > 5 ? 5 : 0,
-                    Maximum = virtualUi.BufferRows.Count > 5 ? Math.Max(0, virtualUi.BufferRows.Count - 5) : 100,
+                    Maximum = virtualUi.BufferRows.Count > 5 ? virtualUi.BufferRows.Count : 100,
                     Visible = virtualUi.BufferRows.Count > 5,
                 },
                 InputScroll = new ChemMasterScrollState
                 {
                     Value = _inputValue, Target = _inputTarget, Stable = _inputStable,
                     Page = virtualUi.InputRows.Count > 5 ? 5 : 0,
-                    Maximum = virtualUi.InputRows.Count > 5 ? Math.Max(0, virtualUi.InputRows.Count - 5) : 100,
+                    Maximum = virtualUi.InputRows.Count > 5 ? virtualUi.InputRows.Count : 100,
                     Visible = virtualUi.InputRows.Count > 5,
                 },
             };
@@ -1944,11 +2053,13 @@ internal static class ChemMasterExecutorTests
             return ui;
         }
 
-        private static void ClampScroll(int count, ref double value, ref double target)
+        private static void ClampScroll(int count, ref double value, ref double target,
+            bool preserveOutOfRangeTarget = false)
         {
             double maximum = count > 5 ? count - 5 : 100;
             value = Math.Clamp(value, 0, maximum);
-            target = Math.Clamp(target, 0, maximum);
+            if (!preserveOutOfRangeTarget)
+                target = Math.Clamp(target, 0, maximum);
         }
 
         private static List<ChemMasterUiRow> BuildRows(List<ChemMasterUiRow> rows, ChemMasterUiRect viewport, int first)

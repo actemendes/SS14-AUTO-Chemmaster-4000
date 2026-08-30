@@ -111,7 +111,7 @@ if ($NoRestore) {
     $publishArguments += '--no-restore'
 }
 
-Write-Host 'Publishing self-contained ChemMasterAssistant for Windows x64...'
+Write-Host 'Publishing self-contained ChemMaster Assistant for Windows x64...'
 & $dotnetCommand.Source @publishArguments
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE."

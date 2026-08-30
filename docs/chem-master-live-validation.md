@@ -1,4 +1,4 @@
-# Живая проверка ChemMasterAssistant — 29.08.2026
+# Живая проверка ChemMaster Assistant — 29.08.2026
 
 ## Итог
 

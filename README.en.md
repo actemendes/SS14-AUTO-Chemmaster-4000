@@ -2,7 +2,7 @@
 
 [Russian version](README.md) | **English version**
 
-![ChemMasterAssistant icon](src/Shared/chemmaster.gif)
+![ChemMaster Assistant icon](src/Shared/chemmaster.gif)
 
 ChemMaster Assistant helps prepare reagents using the ChemMaster 4000. You select the required chemicals and amount, review the proposed plan, and the application clicks standard controls in the game window that is already open.
 
@@ -19,11 +19,13 @@ The application runs locally on your computer. It does not require you to sign i
 
 ## Installation
 
-1. Open the [Releases](https://github.com/actemendes/ss14-chemmaster/releases) page and download the archive for the latest version.
+1. Open the [Releases](https://github.com/actemendes/ChemMaster-Assistant/releases) page and download the archive for the latest version.
 2. Extract the archive to a regular folder. Do not run the application directly from the archive.
 3. Run `ChemMasterAssistant.exe`.
 
 The ready-to-use release does not require you to install .NET, PowerShell, or any other software.
+
+Click `Проверить обновления` (Check for updates) at the top of the application to open the [ChemMaster Assistant releases page](https://github.com/actemendes/ChemMaster-Assistant/releases).
 
 ## Main features
 
@@ -57,13 +59,13 @@ Changing selected targets, amounts, or mode invalidates the old preview. The ass
 
 Normal mode performs additional pointer, reagent-row, and UI-state checks before the next input. This is the recommended mode.
 
-Turbo mode is available under `Выполнение` (Execution) → `Турбо-режим — минимум проверок (опасно)` (Turbo mode — minimum checks, dangerous). It scrolls faster and skips some UI checks, so it can select the wrong row or spoil a recipe. Enable it only after the normal mode works reliably; `F12` remains available.
+Turbo mode is available under `Режимы` (Modes) → `Турбо-режим — минимум проверок (опасно)` (Turbo mode — minimum checks, dangerous). It scrolls faster and skips some UI checks, so it can select the wrong row or spoil a recipe. Enable it only after the normal mode works reliably; `F12` remains available.
 
 Both execution settings are saved in `settings.json` and cannot be changed while a task is running.
 
 ## Two-phase operation with a hot beaker
 
-`Выполнение` (Execution) → `Горячая мензурка — двухфазная автоматизация` (Hot beaker — two-phase automation) is enabled by default. If a hot beaker would trigger a competing reaction—for example, producing Benzene instead of Oil—the assistant reports the conflict in the preview and splits execution into phases:
+`Режимы` (Modes) → `Горячая мензурка — двухфазная автоматизация` (Hot beaker — two-phase automation) is enabled by default. If a hot beaker would trigger a competing reaction—for example, producing Benzene instead of Oil—the assistant reports the conflict in the preview and splits execution into phases:
 
 1. it asks you to install an empty cold beaker;
 2. it prepares safe intermediates and returns them to the buffer;
@@ -100,7 +102,7 @@ Check that:
 - the global `F12` hotkey is available and the emergency stop is not active;
 - two-phase preparation is using the empty beaker requested by the assistant.
 
-The reason for stopping is shown in the assistant window and recorded in the journal. Use the log button in the connection section to open journals. Warnings use a system sound and errors use the sound from the release `Assets` folder; an unavailable audio device never interrupts execution.
+The reason for stopping is shown in the assistant window and recorded in the journal. Use `Debug-логи` (Debug logs) on the right side of the top bar to open journals. Warnings use a system sound and errors use the sound from the release `Assets` folder; an unavailable audio device never interrupts execution.
 
 ## For developers
 

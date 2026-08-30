@@ -27,14 +27,14 @@ internal static class AssistantProgram
             ApplicationConfiguration.Initialize();
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.ThreadException += (_, eventArgs) =>
-                MessageBox.Show(eventArgs.Exception.Message, "ChemMasterAssistant — ошибка",
+                MessageBox.Show(eventArgs.Exception.Message, "ChemMaster Assistant — ошибка",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             Application.Run(new MainForm());
             return 0;
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "ChemMasterAssistant не запущен",
+            MessageBox.Show(ex.Message, "ChemMaster Assistant не запущен",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }

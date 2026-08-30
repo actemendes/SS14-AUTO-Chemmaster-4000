@@ -1,6 +1,6 @@
 # Third-party notices
 
-ChemMasterAssistant distributes or uses the following third-party components and data.
+ChemMaster Assistant distributes or uses the following third-party components and data.
 
 ## Microsoft .NET Runtime and Windows Desktop Runtime
 
